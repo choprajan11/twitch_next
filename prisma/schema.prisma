@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  key           String?
+  funds         Float     @default(0.0)
+  role          String    @default("user")
+  status        Boolean   @default(true)
+  vcode         String?
+  rememberToken String?
+  data          Json?
+  
+  orders        Order[]
+  transactions  Transaction[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  position  Int       @default(0)
+  status    Boolean   @default(true)
+  services  Service[]
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Service {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  type           String?
+  categoryId     String
+  category       Category  @relation(fields: [categoryId], references: [id])
+  desc           String?   @db.Text
+  status         Boolean   @default(true)
+  apiId          String?
+  api            Api?      @relation(fields: [apiId], references: [id])
+  apiServiceId   String?
+  plans          Json?
+  stock          Boolean   @default(true)
+  config         Json?
+  pid            String?
+  orders         Order[]
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Api {
+  id        String    @id @default(cuid())
+  name      String
+  url       String
+  key       String
+  status    Boolean   @default(true)
+  data      Json?
+  
+  services  Service[]
+  orders    Order[]
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Order {
+  id           String    @id @default(cuid())
+  serviceId    String
+  service      Service   @relation(fields: [serviceId], references: [id])
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  apiId        String?
+  api          Api?      @relation(fields: [apiId], references: [id])
+  apiOrderId   String?
+  oid          String?   @unique
+  status       String    @default("payment")
+  link         String?   @db.Text
+  data         Json?
+  quantity     Int       @default(0)
+  price        Float     @default(0.0)
+  txnId        String?
+  gateway      String?
+  startCount   Int       @default(0)
+  remains      Int       @default(0)
+  auto         Boolean   @default(false)
+  log          Json?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+}
+
+model Gateway {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  status        Boolean   @default(true)
+  config        Json?
+  disabledUsers Json?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Transaction {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  gatewayId    String?
+  amount       Float     @default(0.0)
+  oldFunds     Float     @default(0.0)
+  txnId        String?   @unique
+  gatewayTxn   String?
+  status       String    @default("pending")
+  enabled      Boolean   @default(true)
+  log          Json?
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
