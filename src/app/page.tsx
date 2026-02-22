@@ -143,144 +143,168 @@ const steps = [
 export default function Home() {
   return (
     <div className="flex flex-col items-center">
-      {/* Hero Section - Bento Grid Style */}
-      <section className="w-full max-w-7xl mx-auto px-4 pt-8 pb-16 lg:pt-16 lg:pb-24">
-        <div className="bento-grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto]">
+      {/* Hero Section - Apple-style Asymmetric Bento Grid */}
+      <section className="w-full max-w-7xl mx-auto px-4 pt-8 pb-16 lg:pt-12 lg:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           
-          {/* Main Hero Card */}
-          <div className="bento-card lg:col-span-8 lg:row-span-2 p-8 lg:p-12 relative overflow-hidden">
-            <div className="absolute top-6 left-8 flex gap-2">
-              <span className="w-3 h-3 rounded-full bg-orange-400"></span>
-              <span className="w-3 h-3 rounded-full bg-cyan-400"></span>
-              <span className="w-3 h-3 rounded-full bg-[#9146FF]"></span>
-            </div>
-            
-            <div className="mt-8 lg:mt-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9146FF]/10 border border-[#9146FF]/20 mb-6">
-                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span className="text-sm font-semibold text-[#9146FF]">Trusted by 50,000+ Streamers</span>
+          {/* Left Column - Main Content Card + Social Proof Row */}
+          <div className="lg:col-span-8 flex flex-col gap-5">
+            {/* Main Hero Card */}
+            <div className="bento-card p-8 lg:p-10 relative overflow-hidden flex-1">
+              <div className="relative z-10">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-zinc-900 dark:text-white leading-[1.08]">
+                  Grow Your
+                  <br />
+                  <span className="gradient-text">Twitch Channel</span>
+                </h1>
+                
+                <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-md mb-8 leading-relaxed">
+                  The #1 platform for Twitch growth. Get real followers, viewers, and chat engagement—delivered instantly.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="#services">
+                    <Button 
+                      size="lg" 
+                      style={{ backgroundColor: '#9146FF', color: 'white' }} 
+                      variant="shadow" 
+                      className="font-bold px-8 h-12 text-base shadow-[#9146FF]/30"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                  <Link href="/pricing">
+                    <Button 
+                      size="lg" 
+                      variant="bordered" 
+                      className="font-bold px-8 h-12 text-base border-2 border-zinc-200 dark:border-zinc-700 hover:border-[#9146FF] transition-colors"
+                    >
+                      See Pricing
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 text-zinc-900 dark:text-white leading-[1.1]">
-                Grow Your Twitch
-                <br />
-                <span className="gradient-text">Channel Instantly</span>
-              </h1>
-              
-              <p className="text-lg lg:text-xl text-zinc-600 dark:text-zinc-400 max-w-xl mb-8 leading-relaxed">
-                The most reliable platform to boost your Twitch presence. Get real followers, viewers, and engagement—fast and secure.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="#services">
-                  <Button 
-                    size="lg" 
-                    style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                    variant="shadow" 
-                    className="font-bold px-8 h-14 text-lg shadow-[#9146FF]/30 glow-animation"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-                <Link href="/pricing">
-                  <Button 
-                    size="lg" 
-                    variant="bordered" 
-                    className="font-bold px-8 h-14 text-lg border-2 border-zinc-200 dark:border-zinc-700 hover:border-[#9146FF] transition-colors"
-                  >
-                    View Pricing
-                  </Button>
-                </Link>
+
+              {/* Decorative gradient orbs */}
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#9146FF]/20 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            </div>
+
+            {/* Social Proof Row - Two Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Rating Card */}
+              <div className="bento-card p-5 flex items-center gap-4">
+                <div className="flex -space-x-2">
+                  {['bg-gradient-to-br from-[#9146FF] to-purple-600', 'bg-gradient-to-br from-pink-500 to-rose-500', 'bg-gradient-to-br from-cyan-500 to-blue-500', 'bg-gradient-to-br from-green-500 to-emerald-500'].map((bg, i) => (
+                    <div key={i} className={`w-9 h-9 rounded-full ${bg} border-2 border-white dark:border-zinc-900 flex items-center justify-center text-white text-xs font-bold`}>
+                      {['A', 'S', 'M', 'K'][i]}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    ))}
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white ml-1">4.9</span>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">2,500+ reviews</p>
+                </div>
+              </div>
+
+              {/* Testimonial Card */}
+              <div className="bento-card p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#9146FF] to-pink-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    AG
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-snug line-clamp-2">
+                      &ldquo;Best investment for my channel. Went from 500 to 5K followers!&rdquo;
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 font-medium">— Alex Gaming, Twitch Partner</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Followers Stats Card */}
-          <div className="bento-card lg:col-span-4 p-6 float-animation">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-pink-100 dark:bg-pink-950/50 flex items-center justify-center text-pink-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
+          {/* Right Column - Stacked Stat Cards */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {/* Followers Card */}
+            <div className="bento-card p-5 float-animation">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-pink-100 dark:bg-pink-950/50 flex items-center justify-center text-pink-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </div>
+                <div className="flex items-center gap-1.5 text-green-500 text-xs font-semibold">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                  </svg>
+                  +23%
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Total Followers</p>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-white stat-number">10,502</p>
-              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Followers</p>
+              <p className="text-3xl font-bold text-zinc-900 dark:text-white stat-number">10,502</p>
             </div>
-            <div className="flex items-center gap-2 text-green-500 text-sm font-semibold">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-              </svg>
-              +2,340 this week
-            </div>
-          </div>
 
-          {/* Live Viewers Card */}
-          <div className="bento-card lg:col-span-4 p-6 float-animation-delayed">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-500 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
-                  <span className="w-2 h-2 bg-white rounded-full"></span>
+            {/* Live Viewers Card */}
+            <div className="bento-card p-5 float-animation-delayed">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-500 relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                  LIVE
                 </span>
               </div>
-              <div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Live Viewers</p>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-white stat-number">1,240</p>
-              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Viewers</p>
+              <p className="text-3xl font-bold text-zinc-900 dark:text-white stat-number">1,240</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-1 rounded-full bg-red-100 dark:bg-red-950/50 text-red-500 text-xs font-bold">LIVE NOW</span>
-              <span className="text-zinc-500 text-sm">Peak: 2,890</span>
-            </div>
-          </div>
 
-          {/* Chat Preview Card */}
-          <div className="bento-card lg:col-span-4 p-6 hidden lg:block">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">Live Chat</span>
-              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#9146FF] to-cyan-400"></div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-[#9146FF]">StreamFan</span>
-                    <span className="text-xs text-zinc-400">just now</span>
+            {/* Chat Activity Card */}
+            <div className="bento-card p-5 flex-1">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wide">Live Chat</p>
+                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#9146FF] to-cyan-400 shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs">
+                      <span className="font-bold text-[#9146FF]">StreamFan</span>
+                      <span className="text-zinc-600 dark:text-zinc-400 ml-1.5">Amazing stream! 🔥</span>
+                    </p>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">Amazing stream! 🔥</p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs">
+                      <span className="font-bold text-pink-500">GameLover42</span>
+                      <span className="text-zinc-600 dark:text-zinc-400 ml-1.5">Let&apos;s gooo! 🎮</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-green-500 to-emerald-400 shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs">
+                      <span className="font-bold text-green-500">ProGamer99</span>
+                      <span className="text-zinc-600 dark:text-zinc-400 ml-1.5">POG! 🎉</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400"></div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-pink-500">GameLover42</span>
-                    <span className="text-xs text-zinc-400">2m ago</span>
-                  </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">Let&apos;s gooo! 🎮</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Badge Card */}
-          <div className="bento-card lg:col-span-4 p-6 hidden lg:flex items-center gap-4 bg-gradient-to-br from-[#9146FF]/5 to-cyan-500/5">
-            <div className="w-12 h-12 rounded-xl bg-[#9146FF] flex items-center justify-center text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-                <path d="M12 2a10 10 0 0 1 10 10"></path>
-                <circle cx="12" cy="12" r="6"></circle>
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-zinc-900 dark:text-white">Smart Analytics</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Track your growth in real-time</p>
             </div>
           </div>
 
