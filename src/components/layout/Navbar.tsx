@@ -21,6 +21,13 @@ export function Navbar() {
               </Link>
               <div className="hidden md:flex md:items-center md:gap-1">
                 <Link 
+                  href="/free-twitch-followers" 
+                  className="px-4 py-2 text-sm font-semibold text-pink-500 hover:text-pink-600 hover:bg-pink-500/10 rounded-xl transition-all flex items-center gap-1"
+                >
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-pink-500 animate-pulse"></span>
+                  Free Trial
+                </Link>
+                <Link 
                   href="/#services" 
                   className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
                 >

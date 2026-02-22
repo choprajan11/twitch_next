@@ -73,8 +73,18 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/buy-clip-views" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
-                    Clip Views
+                  <Link href="/twitch-clip-downloader" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                    Twitch Clip Downloader
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/twitch-earnings-calculator" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                    Twitch Earnings Calculator
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/free-twitch-followers" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                    Free Twitch Followers
                   </Link>
                 </li>
               </ul>
@@ -123,7 +133,7 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/refunds" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                  <Link href="/refund" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
                     Refund Policy
                   </Link>
                 </li>
