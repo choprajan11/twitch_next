@@ -10,6 +10,7 @@ const navigation = [
   { name: "Refills", href: "/admin/refills", icon: "🔄" },
   { name: "Services", href: "/admin/services", icon: "📦" },
   { name: "Customers", href: "/admin/customers", icon: "👥" },
+  { name: "Users", href: "/admin/users", icon: "🔐" },
   { name: "Settings", href: "/admin/settings", icon: "⚙️" },
 ];
 

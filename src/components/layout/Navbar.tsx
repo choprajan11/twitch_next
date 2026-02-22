@@ -54,7 +54,7 @@ export function Navbar() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <ThemeSwitcher />
+              
               <Link href="/login" className="hidden sm:flex">
                 <Button 
                   variant="light" 
@@ -72,6 +72,7 @@ export function Navbar() {
                   Get Started
                 </Button>
               </Link>
+              <ThemeSwitcher />
             </div>
           </div>
         </div>

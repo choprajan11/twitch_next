@@ -1,13 +1,18 @@
+import { getCustomers } from "../actions";
+
 export const metadata = { title: "Customers - GrowTwitch Admin" };
 
-const customers = [
-  { id: "CUS-12", email: "j.doe@example.com", name: "John Doe", ltv: "$450.00", orders: 12, joined: "Jan 12, 2023", status: "Active" },
-  { id: "CUS-34", email: "markus@streamer.net", name: "Markus V.", ltv: "$1,200.50", orders: 34, joined: "Feb 05, 2023", status: "Active" },
-  { id: "CUS-56", email: "sarah99@gmail.com", name: "Sarah J.", ltv: "$24.99", orders: 1, joined: "Oct 24, 2023", status: "Active" },
-  { id: "CUS-78", email: "fraud@hacker.io", name: "Unknown", ltv: "$0.00", orders: 0, joined: "Oct 23, 2023", status: "Banned" },
-];
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
-export default function CustomersPage() {
+export default async function CustomersPage() {
+  const { customers, total } = await getCustomers(1, 20);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -38,30 +43,44 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {customers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors">
-                  <td className="p-4">
-                    <div className="font-bold text-zinc-900 dark:text-white">{customer.name}</div>
-                    <div className="text-sm text-zinc-500">{customer.email}</div>
-                  </td>
-                  <td className="p-4 text-sm font-black text-green-500">{customer.ltv}</td>
-                  <td className="p-4 text-sm font-semibold text-zinc-900 dark:text-white">{customer.orders}</td>
-                  <td className="p-4 text-sm text-zinc-500">{customer.joined}</td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold
-                      ${customer.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-                      ${customer.status === 'Banned' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : ''}
-                    `}>
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <button className="text-sm font-semibold text-[#9146FF] hover:underline transition-colors">View Profile</button>
+              {customers.length > 0 ? (
+                customers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors">
+                    <td className="p-4">
+                      <div className="font-bold text-zinc-900 dark:text-white">{customer.name}</div>
+                      <div className="text-sm text-zinc-500">{customer.email}</div>
+                    </td>
+                    <td className="p-4 text-sm font-black text-green-500">
+                      ${customer.ltv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="p-4 text-sm font-semibold text-zinc-900 dark:text-white">{customer.ordersCount}</td>
+                    <td className="p-4 text-sm text-zinc-500">{formatDate(customer.createdAt)}</td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        customer.status === 'Active' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {customer.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button className="text-sm font-semibold text-[#9146FF] hover:underline transition-colors">View Profile</button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-zinc-500">
+                    No customers yet. Customers will appear here once they register.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-sm text-zinc-500">
+          Showing {customers.length} of {total} customers
         </div>
       </div>
     </div>
