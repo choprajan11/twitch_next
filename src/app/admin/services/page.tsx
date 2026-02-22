@@ -72,14 +72,14 @@ export default function ServicesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Services & Packages</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2">Loading services...</p>
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Services & Packages</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">Loading services...</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bento-card p-6 h-48 animate-pulse bg-zinc-100 dark:bg-zinc-800/50" />
+            <div key={i} className="bento-card p-6 h-48 animate-pulse" />
           ))}
         </div>
       </div>
@@ -87,35 +87,35 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Services & Packages</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-2">Manage the catalog of services you offer to customers.</p>
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Services & Packages</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">Manage the catalog of services you offer to customers.</p>
         </div>
         <Button 
           onPress={() => setIsModalOpen(true)}
           style={{ backgroundColor: '#9146FF', color: 'white' }} 
-          className="font-bold shadow-[#9146FF]/30"
+          className="font-bold shadow-lg shadow-[#9146FF]/20 rounded-xl"
         >
           + Add Service
         </Button>
       </div>
 
       {services.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {services.map((svc) => (
-            <div key={svc.id} className={`bento-card p-6 flex flex-col relative overflow-hidden transition-all duration-300 ${!svc.active ? 'opacity-70 grayscale-[30%]' : ''}`}>
+            <div key={svc.id} className={`bento-card p-6 flex flex-col relative overflow-hidden transition-all duration-300 ${!svc.active ? 'opacity-60 grayscale-[30%]' : ''}`}>
               {!svc.active && (
-                 <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded-bl-lg z-10">
-                   Inactive / Paused
+                 <div className="absolute top-0 right-0 bg-red-500/90 text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider rounded-bl-xl z-10">
+                   Paused
                  </div>
               )}
               
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{svc.name}</h3>
-                  <span className="text-sm font-semibold text-[#9146FF]">{svc.category}</span>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{svc.name}</h3>
+                  <span className="text-xs font-bold text-[#9146FF] uppercase tracking-wider">{svc.category}</span>
                 </div>
                 <Switch 
                   isSelected={svc.active} 
@@ -125,22 +125,22 @@ export default function ServicesPage() {
                 />
               </div>
               
-              <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-2 gap-4">
+              <div className="mt-auto pt-4 border-t border-[rgba(145,70,255,0.08)] grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Pricing Plans</p>
-                  <p className="text-lg font-bold text-zinc-900 dark:text-white mt-1">{svc.plans} Tiers</p>
+                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Pricing Plans</p>
+                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{svc.plans} Tiers</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Total Sales</p>
-                  <p className="text-lg font-bold text-zinc-900 dark:text-white mt-1">{svc.sales.toLocaleString()}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Total Sales</p>
+                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{svc.sales.toLocaleString()}</p>
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-2">
-                <Button variant="bordered" className="flex-1 font-semibold border-zinc-200 dark:border-zinc-800">
+              <div className="mt-4 flex gap-2">
+                <Button variant="bordered" className="flex-1 font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30">
                   Edit Packages
                 </Button>
-                <Button variant="flat" className="flex-1 font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white">
+                <Button variant="flat" className="flex-1 font-semibold bg-[var(--bento-bg)] text-zinc-900 dark:text-white rounded-xl">
                   Settings
                 </Button>
               </div>
@@ -148,19 +148,18 @@ export default function ServicesPage() {
           ))}
         </div>
       ) : (
-        <div className="bento-card p-12 text-center">
-          <p className="text-zinc-500 dark:text-zinc-400 mb-4">No services configured yet.</p>
+        <div className="bento-card-static p-12 text-center">
+          <p className="text-zinc-500 dark:text-zinc-400 mb-4 text-sm">No services configured yet.</p>
           <Button 
             onPress={() => setIsModalOpen(true)}
             style={{ backgroundColor: '#9146FF', color: 'white' }} 
-            className="font-bold"
+            className="font-bold rounded-xl shadow-lg shadow-[#9146FF]/20"
           >
             Create Your First Service
           </Button>
         </div>
       )}
 
-      {/* Modal */}
       {isModalOpen && (
         <>
           <div 
@@ -168,14 +167,14 @@ export default function ServicesPage() {
             onClick={() => setIsModalOpen(false)}
           />
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
-              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Create New Service</h2>
+            <div className="bento-card-static w-full max-w-md">
+              <div className="px-6 py-5 border-b border-[rgba(145,70,255,0.08)]">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Create New Service</h2>
               </div>
               
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                     Service Name
                   </label>
                   <input
@@ -183,13 +182,13 @@ export default function ServicesPage() {
                     value={newServiceName}
                     onChange={(e) => setNewServiceName(e.target.value)}
                     placeholder="e.g. Channel Subscriptions"
-                    className="w-full px-4 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]"
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
                     autoFocus
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                     Category
                   </label>
                   <input
@@ -197,12 +196,12 @@ export default function ServicesPage() {
                     value={newServiceCategory}
                     onChange={(e) => setNewServiceCategory(e.target.value)}
                     placeholder="e.g. Engagement"
-                    className="w-full px-4 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]"
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Set Active Immediately</span>
+                <div className="flex items-center justify-between p-4 border border-[rgba(145,70,255,0.1)] rounded-xl">
+                  <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">Set Active Immediately</span>
                   <Switch 
                     isSelected={newServiceActive}
                     onValueChange={setNewServiceActive}
@@ -212,17 +211,17 @@ export default function ServicesPage() {
                 </div>
               </div>
               
-              <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
+              <div className="px-6 py-4 border-t border-[rgba(145,70,255,0.08)] flex justify-end gap-2">
                 <Button 
                   variant="flat" 
-                  className="font-semibold"
+                  className="font-semibold rounded-xl bg-[var(--bento-bg)]"
                   onPress={() => setIsModalOpen(false)}
                 >
                   Cancel
                 </Button>
                 <Button 
                   style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                  className="font-bold"
+                  className="font-bold rounded-xl shadow-sm shadow-[#9146FF]/20"
                   onPress={handleCreateService}
                   isDisabled={!newServiceName.trim() || !newServiceCategory.trim()}
                 >

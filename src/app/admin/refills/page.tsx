@@ -64,62 +64,62 @@ export default function RefillsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Refills Queue</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mt-2">Manage customer drop reports under the 30-Day Guarantee.</p>
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Refills Queue</h1>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">Manage customer drop reports under the 30-Day Guarantee.</p>
       </div>
 
-      <div className="bento-card overflow-hidden">
+      <div className="bento-card-static overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
              <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Refill ID</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Original Order</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Customer & Target</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Service</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Requested</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
-                <th className="p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider text-right">Actions</th>
+              <tr className="bg-[var(--bento-bg)] border-b border-[rgba(145,70,255,0.08)]">
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Refill ID</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Original Order</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Customer & Target</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Service</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Requested</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-[rgba(145,70,255,0.06)]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-zinc-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 text-sm">
                     Loading refills...
                   </td>
                 </tr>
               ) : refills.length > 0 ? (
                 refills.map((refill) => (
-                  <tr key={refill.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors">
-                    <td className="p-4 font-bold text-zinc-900 dark:text-white">{refill.id.slice(0, 8)}...</td>
-                    <td className="p-4 font-semibold text-[#9146FF] cursor-pointer hover:underline">{refill.orderId.slice(0, 8)}...</td>
-                    <td className="p-4">
+                  <tr key={refill.id} className="hover:bg-[var(--bento-bg)] transition-colors">
+                    <td className="px-6 py-3.5 font-bold text-sm text-zinc-900 dark:text-white">{refill.id.slice(0, 8)}...</td>
+                    <td className="px-6 py-3.5 font-semibold text-sm text-[#9146FF] cursor-pointer hover:underline underline-offset-4">{refill.orderId.slice(0, 8)}...</td>
+                    <td className="px-6 py-3.5">
                       <div className="text-sm text-zinc-500">{refill.customer}</div>
                       <div className="text-xs font-mono font-bold text-zinc-900 dark:text-white max-w-[150px] truncate">{refill.target}</div>
                     </td>
-                    <td className="p-4 text-sm text-zinc-600 dark:text-zinc-400">{refill.service}</td>
-                    <td className="p-4 text-sm text-zinc-500">{formatTimeAgo(refill.requestedAt)}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    <td className="px-6 py-3.5 text-sm text-zinc-600 dark:text-zinc-400">{refill.service}</td>
+                    <td className="px-6 py-3.5 text-sm text-zinc-500">{formatTimeAgo(refill.requestedAt)}</td>
+                    <td className="px-6 py-3.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold ring-1 ${
                         refill.status === 'Approved' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                          ? 'bg-green-500/10 text-green-600 dark:text-green-400 ring-green-500/20' 
                           : refill.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'
+                          ? 'bg-red-500/10 text-red-600 dark:text-red-400 ring-red-500/20'
+                          : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 ring-yellow-500/20'
                       }`}>
                         {refill.status}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="px-6 py-3.5 text-right">
                       {refill.status === 'Pending Review' && (
                         <div className="flex justify-end gap-2">
                           <Button 
                             size="sm" 
                             style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                            className="font-bold"
+                            className="font-bold rounded-xl shadow-sm shadow-[#9146FF]/20"
                             isLoading={isPending}
                             onPress={() => handleAction(refill.id, 'completed')}
                           >
@@ -129,7 +129,7 @@ export default function RefillsPage() {
                             size="sm" 
                             color="danger" 
                             variant="flat" 
-                            className="font-bold"
+                            className="font-bold rounded-xl"
                             isLoading={isPending}
                             onPress={() => handleAction(refill.id, 'rejected')}
                           >
@@ -142,7 +142,7 @@ export default function RefillsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-zinc-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 text-sm">
                     No refill requests pending. Refill requests will appear here when customers report drops.
                   </td>
                 </tr>
