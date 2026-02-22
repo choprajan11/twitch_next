@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Button } from "@heroui/react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { NavbarAuthButton } from "./NavbarAuthButton";
 
 export function Navbar() {
+
   return (
     <nav className="sticky top-0 z-50 w-full">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -53,26 +54,9 @@ export function Navbar() {
                 </Link>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              
-              <Link href="/login" className="hidden sm:flex">
-                <Button 
-                  variant="light" 
-                  className="font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10"
-                >
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button 
-                  style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                  variant="shadow" 
-                  className="font-bold shadow-[#9146FF]/30 rounded-xl"
-                >
-                  Get Started
-                </Button>
-              </Link>
+            <div className="flex items-center gap-3">
               <ThemeSwitcher />
+              <NavbarAuthButton />
             </div>
           </div>
         </div>

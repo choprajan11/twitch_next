@@ -103,13 +103,13 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/blog" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
-                    Blog
+                  <Link href="/faq" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                    FAQ
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
-                    Careers
+                  <Link href="/contact" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#9146FF] transition-colors">
+                    Contact
                   </Link>
                 </li>
               </ul>

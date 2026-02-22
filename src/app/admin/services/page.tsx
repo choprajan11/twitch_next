@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Button, Switch } from "@heroui/react";
-import { getAllServices, toggleServiceStatus } from "./actions";
+import { getAllServices, toggleServiceStatus, updateService } from "./actions";
 
 interface Service {
   id: string;
@@ -18,6 +18,11 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editSlug, setEditSlug] = useState("");
   const [newServiceName, setNewServiceName] = useState("");
   const [newServiceCategory, setNewServiceCategory] = useState("");
   const [newServiceActive, setNewServiceActive] = useState(true);
@@ -46,6 +51,36 @@ export default function ServicesPage() {
         setServices(services.map(svc => 
           svc.id === id ? { ...svc, active: !svc.active } : svc
         ));
+      }
+    });
+  };
+
+  const openEditModal = (service: Service) => {
+    setSelectedService(service);
+    setEditName(service.name);
+    setEditCategory(service.category);
+    setEditSlug(service.slug);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!selectedService || !editName.trim() || !editCategory.trim()) return;
+    
+    startTransition(async () => {
+      const result = await updateService(selectedService.id, {
+        name: editName.trim(),
+        category: editCategory.trim(),
+        slug: editSlug.trim() || editName.toLowerCase().replace(/\s+/g, '-'),
+      });
+      
+      if (result.success) {
+        setServices(services.map(svc => 
+          svc.id === selectedService.id 
+            ? { ...svc, name: editName.trim(), category: editCategory.trim(), slug: editSlug.trim() || editName.toLowerCase().replace(/\s+/g, '-') } 
+            : svc
+        ));
+        setIsEditModalOpen(false);
+        setSelectedService(null);
       }
     });
   };
@@ -137,10 +172,18 @@ export default function ServicesPage() {
               </div>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="bordered" className="flex-1 font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30">
+                <Button 
+                  variant="bordered" 
+                  className="flex-1 font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30"
+                  onPress={() => window.location.href = `/admin/services/${svc.id}/packages`}
+                >
                   Edit Packages
                 </Button>
-                <Button variant="flat" className="flex-1 font-semibold bg-[var(--bento-bg)] text-zinc-900 dark:text-white rounded-xl">
+                <Button 
+                  variant="flat" 
+                  className="flex-1 font-semibold bg-[var(--bento-bg)] text-zinc-900 dark:text-white rounded-xl"
+                  onPress={() => openEditModal(svc)}
+                >
                   Settings
                 </Button>
               </div>
@@ -226,6 +269,84 @@ export default function ServicesPage() {
                   isDisabled={!newServiceName.trim() || !newServiceCategory.trim()}
                 >
                   Create Service
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {isEditModalOpen && selectedService && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            onClick={() => setIsEditModalOpen(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+            <div className="bento-card-static w-full max-w-md">
+              <div className="px-6 py-5 border-b border-[rgba(145,70,255,0.08)]">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Edit Service Settings</h2>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    Service Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="e.g. Channel Subscriptions"
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
+                    autoFocus
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={editSlug}
+                    onChange={(e) => setEditSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                    placeholder="e.g. channel-subscriptions"
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm font-mono"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">Used in the URL: /buy-{editSlug || 'service-name'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    placeholder="e.g. Engagement"
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div className="px-6 py-4 border-t border-[rgba(145,70,255,0.08)] flex justify-end gap-2">
+                <Button 
+                  variant="flat" 
+                  className="font-semibold rounded-xl bg-[var(--bento-bg)]"
+                  onPress={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  style={{ backgroundColor: '#9146FF', color: 'white' }} 
+                  className="font-bold rounded-xl shadow-sm shadow-[#9146FF]/20"
+                  onPress={handleUpdateService}
+                  isDisabled={!editName.trim() || !editCategory.trim() || isPending}
+                  isLoading={isPending}
+                >
+                  Save Changes
                 </Button>
               </div>
             </div>

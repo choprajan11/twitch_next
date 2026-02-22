@@ -1,81 +1,154 @@
-import { Button, Card, Input } from "@heroui/react";
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-const mockOrders = [
-  { id: "ORD-001", service: "100 Twitch Followers", status: "completed", price: 2.99, date: "2026-02-20" },
-  { id: "ORD-002", service: "50 Twitch Viewers (1hr)", status: "pending", price: 4.99, date: "2026-02-21" },
-  { id: "ORD-003", service: "Basic Chatbot (1hr)", status: "processing", price: 9.99, date: "2026-02-22" },
-];
+export const metadata = {
+  title: 'My Dashboard - GrowTwitch',
+  description: 'Manage your GrowTwitch orders and account',
+};
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // If user is admin, redirect to admin dashboard
+  if (user.role === 'admin') {
+    redirect('/admin');
+  }
+
+  // Fetch user's orders from database
+  const orders = await prisma.order.findMany({
+    where: { userId: user.id },
+    include: { service: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  const totalOrders = await prisma.order.count({
+    where: { userId: user.id },
+  });
+
+  const activeOrders = await prisma.order.count({
+    where: { 
+      userId: user.id,
+      status: { in: ['processing', 'pending', 'inprogress'] },
+    },
+  });
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <>
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Overview</h1>
+        <p className="text-zinc-500 mt-1">Welcome back, {user.name || user.email}</p>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="col-span-1 space-y-6">
-          <Card>
-            <Card.Header>
-              <Card.Title>Wallet Balance</Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <p className="text-4xl font-bold mb-4">$15.50</p>
-              <form className="space-y-4" action={async (formData) => {
-                "use server";
-                console.log("Add funds:", formData.get("amount"));
-              }}>
-                <div className="space-y-2">
-                  <label htmlFor="amount" className="text-sm font-medium">Add Funds</label>
-                  <Input id="amount" name="amount" type="number" min="5" placeholder="Amount ($)" required />
-                </div>
-                <Button type="submit" className="w-full">Add via Stripe</Button>
-              </form>
-            </Card.Content>
-          </Card>
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-zinc-500 mb-1">Total Orders</p>
+              <p className="text-2xl font-black text-zinc-900 dark:text-white">{totalOrders}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-[#9146FF]/10 flex items-center justify-center text-[#9146FF]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><line x1="3" x2="21" y1="6" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </div>
+          </div>
         </div>
-
-        <div className="col-span-1 lg:col-span-3">
-          <Card>
-            <Card.Header>
-              <Card.Title>Order History</Card.Title>
-              <Card.Description>Recent orders and their current status</Card.Description>
-            </Card.Header>
-            <Card.Content>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs uppercase bg-muted">
-                    <tr>
-                      <th className="px-6 py-3">Order ID</th>
-                      <th className="px-6 py-3">Service</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Price</th>
-                      <th className="px-6 py-3">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockOrders.map((order) => (
-                      <tr key={order.id} className="border-b bg-background">
-                        <td className="px-6 py-4 font-medium">{order.id}</td>
-                        <td className="px-6 py-4">{order.service}</td>
-                        <td className="px-6 py-4">
-                          <span className={\`px-2 py-1 rounded-full text-xs font-semibold \${
-                            order.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                          }\`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">\${order.price.toFixed(2)}</td>
-                        <td className="px-6 py-4">{order.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card.Content>
-          </Card>
+        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-zinc-500 mb-1">Active Orders</p>
+              <p className="text-2xl font-black text-[#9146FF]">{activeOrders}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-zinc-500 mb-1">Wallet Balance</p>
+              <p className="text-2xl font-black text-green-500">${user.funds.toFixed(2)}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="14" x="2" y="5" rx="2" /><path d="M2 10h20" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Recent Orders */}
+      <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <h2 className="text-sm font-bold text-zinc-900 dark:text-white">Recent Orders</h2>
+          <Link href="/dashboard/orders" className="text-xs font-semibold text-[#9146FF] hover:text-[#7b35de] transition-colors">
+            View All
+          </Link>
+        </div>
+        
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          {orders.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <div className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+                  <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
+                </svg>
+              </div>
+              <p className="text-sm text-zinc-500 mb-4">No orders yet</p>
+              <Link 
+                href="/#services" 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#9146FF] text-white text-sm font-semibold rounded-xl hover:bg-[#7b35de] transition-colors"
+              >
+                Browse Services
+              </Link>
+            </div>
+          ) : (
+            orders.map((order) => (
+              <div key={order.id} className="px-5 py-4 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#9146FF]/10 flex items-center justify-center text-[#9146FF] shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{order.service.name}</p>
+                    <p className="text-xs text-zinc-500">{order.quantity.toLocaleString()} · {new Date(order.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    order.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
+                    order.status === 'processing' || order.status === 'inprogress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' :
+                    order.status === 'pending' || order.status === 'payment' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' :
+                    order.status === 'cancelled' || order.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                    'bg-zinc-100 text-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400'
+                  }`}>
+                    {(order.status === 'processing' || order.status === 'inprogress') && (
+                      <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></span>
+                    )}
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </span>
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white">${order.price.toFixed(2)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
   );
 }

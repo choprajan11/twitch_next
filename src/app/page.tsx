@@ -1,66 +1,12 @@
-import { Button } from "@heroui/react";
 import Link from "next/link";
+import { Button } from "@heroui/react";
 import { HeroFloatingElements } from "@/components/HeroFloatingElements";
-
-const services = [
-  {
-    id: 1,
-    name: "Twitch Followers",
-    slug: "buy-followers",
-    desc: "Get real, high-quality followers delivered instantly to your channel.",
-    price: "From $2.99",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-      </svg>
-    ),
-    color: "#ec4899",
-    bgColor: "bg-pink-50 dark:bg-pink-950/30"
-  },
-  {
-    id: 2,
-    name: "Live Viewers",
-    slug: "buy-viewers",
-    desc: "Increase your concurrent viewers and rank higher in categories.",
-    price: "From $4.99",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      </svg>
-    ),
-    color: "#9146FF",
-    bgColor: "bg-purple-50 dark:bg-purple-950/30"
-  },
-  {
-    id: 3,
-    name: "Chat Engagement",
-    slug: "buy-chatbot",
-    desc: "Automated realistic chat keeps your stream lively and engaging.",
-    price: "From $9.99",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-      </svg>
-    ),
-    color: "#06b6d4",
-    bgColor: "bg-cyan-50 dark:bg-cyan-950/30"
-  },
-  {
-    id: 4,
-    name: "Clip Views",
-    slug: "buy-clip-views",
-    desc: "Make your best moments go viral with high-quality views.",
-    price: "From $1.99",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    ),
-    color: "#22c55e",
-    bgColor: "bg-green-50 dark:bg-green-950/30"
-  }
-];
+import ServicesGrid from "@/components/ServicesGrid";
+import FeaturesSection from "@/components/FeaturesSection";
+import ComparisonSection from "@/components/ComparisonSection";
+import FAQSection from "@/components/FAQSection";
+import TrustBadges from "@/components/TrustBadges";
+import HeroEmailForm from "@/components/HeroEmailForm";
 
 const stats = [
   { value: "50K+", label: "Happy Customers", color: "#9146FF" },
@@ -145,13 +91,13 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section - Full-Width with Floating Elements */}
-      <section className="w-full max-w-7xl mx-auto px-4 pt-12 pb-20 lg:pt-20 lg:pb-32 relative overflow-hidden">
+      <section className="w-full max-w-7xl mx-auto px-4 pt-12 pb-20 lg:pt-24 lg:pb-36 relative">
         
         {/* Animated Floating Elements */}
         <HeroFloatingElements />
 
         {/* Center Content */}
-        <div className="relative z-20 text-center max-w-4xl mx-auto">
+        <div className="relative z-20 text-center max-w-3xl mx-auto">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#9146FF]/10 border border-[#9146FF]/20 mb-8">
             <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -159,7 +105,7 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight mb-6 text-zinc-900 dark:text-white leading-[1.05]">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 text-zinc-900 dark:text-white leading-[1.05]">
             Grow Your Twitch
             <br />
             <span className="gradient-text">Channel Instantly</span>
@@ -170,28 +116,8 @@ export default function Home() {
             The #1 platform for premium Twitch services. Get real followers, viewers, and chat engagement—delivered fast and secure.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="#services">
-              <Button 
-                size="lg" 
-                style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                variant="shadow" 
-                className="font-bold px-10 h-14 text-lg shadow-[#9146FF]/30 glow-animation"
-              >
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button 
-                size="lg" 
-                variant="bordered" 
-                className="font-bold px-10 h-14 text-lg border-2 border-zinc-200 dark:border-zinc-700 hover:border-[#9146FF] transition-colors"
-              >
-                View Pricing
-              </Button>
-            </Link>
-          </div>
+          {/* Email Signup CTA */}
+          <HeroEmailForm />
 
           {/* Social Proof Row */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
@@ -255,35 +181,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="bento-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          {services.map((service, index) => (
-            <Link href={`/${service.slug}`} key={service.id} className="block group">
-              <div className={`bento-card h-full p-6 ${index === 0 ? 'md:col-span-2 lg:col-span-1' : ''}`}>
-                <div 
-                  className={`w-14 h-14 rounded-2xl ${service.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                  style={{ color: service.color }}
-                >
-                  {service.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-zinc-900 dark:text-white group-hover:text-[#9146FF] transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 mb-4 text-sm leading-relaxed">
-                  {service.desc}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#9146FF]">{service.price}</span>
-                  <span className="text-zinc-400 group-hover:text-[#9146FF] group-hover:translate-x-1 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <ServicesGrid />
       </section>
 
       {/* Stats Section - Bento Grid */}
@@ -332,6 +230,12 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Features/Guarantees Section */}
+      <FeaturesSection />
+
+      {/* Comparison Section */}
+      <ComparisonSection />
+
       {/* Testimonials Section */}
       <section className="w-full max-w-7xl mx-auto px-4 py-16 lg:py-24">
         <div className="text-center mb-12">
@@ -370,6 +274,12 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FAQSection />
+
+      {/* Trust Badges / Payment Section */}
+      <TrustBadges />
 
       {/* CTA Section */}
       <section className="w-full max-w-7xl mx-auto px-4 py-16 lg:py-24">

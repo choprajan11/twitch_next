@@ -52,7 +52,7 @@ export function HeroFloatingElements() {
   return (
     <>
       {/* Floating Card - Top Left (Followers) */}
-      <div className="hidden lg:block absolute top-24 left-8 xl:left-16 z-10">
+      <div className="hidden lg:block absolute top-16 left-4 xl:left-8 z-10">
         <div className="bento-card p-4 float-animation shadow-lg">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center text-pink-500">
@@ -76,7 +76,7 @@ export function HeroFloatingElements() {
       </div>
 
       {/* Floating Card - Top Right (Live Viewers) */}
-      <div className="hidden lg:block absolute top-28 right-8 xl:right-16 z-10">
+      <div className="hidden lg:block absolute top-16 right-4 xl:right-8 z-10">
         <div className="bento-card p-4 float-animation-delayed shadow-lg">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950/40 flex items-center justify-center text-red-500">
@@ -103,7 +103,7 @@ export function HeroFloatingElements() {
       </div>
 
       {/* Floating Card - Bottom Left (Chat) */}
-      <div className="hidden lg:block absolute bottom-32 left-12 xl:left-24 z-10">
+      <div className="hidden lg:block absolute bottom-8 -left-4 xl:left-2 z-10">
         <div className="bento-card p-3 px-4 float-animation shadow-lg" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center gap-2.5">
             <div 
@@ -127,7 +127,7 @@ export function HeroFloatingElements() {
       </div>
 
       {/* Floating Card - Bottom Right (Rating) */}
-      <div className="hidden lg:block absolute bottom-36 right-12 xl:right-24 z-10">
+      <div className="hidden lg:block absolute bottom-8 -right-4 xl:right-2 z-10">
         <div className="bento-card p-3 px-4 float-animation-delayed shadow-lg">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5">
