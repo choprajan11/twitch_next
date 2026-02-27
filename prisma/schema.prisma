@@ -23,6 +23,7 @@ model User {
   
   orders        Order[]
   transactions  Transaction[]
+  fundLogs      FundLog[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -129,4 +130,22 @@ model Transaction {
   
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model BanList {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+}
+
+model FundLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  amount    Float
+  oldFunds  Float
+  newFunds  Float
+  note      String?
+  createdAt DateTime @default(now())
 }

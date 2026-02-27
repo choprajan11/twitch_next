@@ -81,7 +81,7 @@ export async function createService(data: {
 export async function updateService(serviceId: string, data: {
   name: string;
   category: string;
-  slug: string;
+  slug?: string;
 }) {
   try {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
