@@ -15,7 +15,6 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // If user is admin, redirect to admin dashboard
   if (user.role === 'admin') {
     redirect('/admin');
   }

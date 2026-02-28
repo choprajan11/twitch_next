@@ -39,27 +39,12 @@ export async function updateSession(request: NextRequest) {
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
 
   if ((isAdminRoute || isDashboardRoute) && !session) {
-    // Redirect unauthenticated users to login page
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Admin routing check: if a non-admin tries to access /admin, redirect to /dashboard
-  if (isAdminRoute && session && session.role !== 'admin') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // If admin tries to access /dashboard, redirect to /admin
-  if (isDashboardRoute && session && session.role === 'admin') {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
   if (isAuthRoute && session) {
-    // Redirect authenticated users from login based on role
-    if (session.role === 'admin') {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    } else {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    const target = session.role === 'admin' ? '/admin' : '/dashboard';
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return NextResponse.next();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
+import { isDisposableEmail, rateLimit } from "@/lib/security";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const isDev = process.env.NODE_ENV === "development";
@@ -11,6 +12,15 @@ function generateCode(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const { allowed } = rateLimit(`send-code:${ip}`, 5, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { email } = await request.json();
 
     if (!email || !email.includes("@")) {
@@ -21,6 +31,13 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    if (isDisposableEmail(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Disposable email addresses are not allowed" },
+        { status: 400 }
+      );
+    }
     const code = generateCode();
 
     let user = await prisma.user.findUnique({

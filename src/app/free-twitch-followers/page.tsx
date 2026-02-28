@@ -1,5 +1,5 @@
-import { Button } from "@heroui/react";
 import Link from "next/link";
+import FreeFollowersForm from "./FreeFollowersForm";
 
 export const metadata = {
   title: "Get Free Twitch Followers Instantly - GrowTwitch",
@@ -7,8 +7,6 @@ export const metadata = {
 };
 
 export default function FreeFollowersPage() {
-  const inputClass = "w-full h-12 px-4 bg-zinc-50 dark:bg-zinc-800/50 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none transition-colors hover:border-[#9146FF]/50 focus:border-[#9146FF] focus:ring-2 focus:ring-[#9146FF]/20";
-
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pt-12 pb-24">
       {/* Header */}
@@ -27,46 +25,7 @@ export default function FreeFollowersPage() {
       {/* Form Card */}
       <div className="max-w-xl mx-auto">
         <div className="bento-card p-6 lg:p-8">
-          <form className="space-y-5">
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Twitch Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                required
-                placeholder="your_channel_name"
-                className={inputClass}
-              />
-              <p className="text-xs text-zinc-500 mt-2">Make sure your channel is public.</p>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                placeholder="hello@example.com"
-                className={inputClass}
-              />
-              <p className="text-xs text-zinc-500 mt-2">We&apos;ll send your delivery confirmation here.</p>
-            </div>
-
-            <Button 
-              type="submit"
-              size="lg" 
-              className="w-full h-12 font-bold text-base"
-              style={{ backgroundColor: "#9146FF", color: "white" }}
-            >
-              Send My Free Followers
-            </Button>
-          </form>
+          <FreeFollowersForm />
 
           <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800 text-center text-sm text-zinc-500 dark:text-zinc-400">
             <p>By claiming, you agree to our <Link href="/terms" className="text-[#9146FF] hover:underline">Terms of Service</Link>.</p>

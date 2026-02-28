@@ -2,17 +2,30 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { isDisposableEmail, rateLimit } from "@/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-02-24.acacia",
 });
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 type Plan = {
   id: string;
   name: string;
   price: number;
   quantity: number;
+  popular?: boolean;
 };
+
+function generateOid(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const rand = Array.from({ length: 4 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
+  return `GT-${Date.now()}-${rand}`;
+}
 
 function parseTwitchLink(input: string, serviceType?: string | null): string {
   const cleaned = input.replace(/\s/g, "");
@@ -38,7 +51,6 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
     throw new Error("Please enter a valid video link");
   }
 
-  // Followers, viewers, chat bots - extract username
   const userMatch = cleaned.match(
     /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:twitch\.tv\/)?@?([a-zA-Z0-9_]+)/
   );
@@ -48,7 +60,7 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, gateway } = body;
+    const { serviceSlug, planId, link, email, paymentMethod } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
@@ -62,6 +74,21 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Please provide a valid email address" },
         { status: 400 }
+      );
+    }
+
+    if (isDisposableEmail(emailClean)) {
+      return NextResponse.json(
+        { error: "Disposable email addresses are not allowed" },
+        { status: 400 }
+      );
+    }
+
+    const { allowed } = rateLimit(`checkout:${emailClean}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
       );
     }
 
@@ -98,22 +125,18 @@ export async function POST(req: Request) {
       );
     }
 
-    let user = await prisma.user.findUnique({ where: { email: emailClean } });
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: emailClean,
-          vcode: String(Math.floor(100000 + Math.random() * 900000)),
-        },
-      });
-    }
+    const user = await prisma.user.upsert({
+      where: { email: emailClean },
+      create: { email: emailClean },
+      update: {},
+    });
 
     const duplicateOrder = await prisma.order.findFirst({
       where: {
         userId: user.id,
         link: parsedLink,
         serviceId: service.id,
-        status: { in: ["pending", "processing"] },
+        status: { notIn: ["completed", "cancelled", "failed"] },
       },
     });
     if (duplicateOrder) {
@@ -124,12 +147,17 @@ export async function POST(req: Request) {
     }
 
     const price = Number(selectedPlan.price.toFixed(2));
-    const orderId = `OID${Date.now()}`;
-    const paymentGateway = gateway === "wallet" ? "wallet" : "stripe";
+    const oid = generateOid();
+    const gateway =
+      paymentMethod === "crypto"
+        ? "crypto"
+        : paymentMethod === "wallet"
+          ? "wallet"
+          : "stripe";
 
     const order = await prisma.order.create({
       data: {
-        oid: orderId,
+        oid,
         userId: user.id,
         serviceId: service.id,
         apiId: service.apiId,
@@ -137,7 +165,7 @@ export async function POST(req: Request) {
         link: parsedLink,
         price,
         quantity: selectedPlan.quantity,
-        gateway: paymentGateway,
+        gateway,
         data: {
           mode: "web",
           service: service.name,
@@ -146,7 +174,13 @@ export async function POST(req: Request) {
       },
     });
 
-    if (paymentGateway === "wallet") {
+    if (gateway === "crypto") {
+      return NextResponse.json({
+        url: "/checkout/failed?reason=crypto_coming_soon",
+      });
+    }
+
+    if (gateway === "wallet") {
       const session = await getSession();
       if (!session || session.userId !== user.id) {
         return NextResponse.json(
@@ -181,19 +215,16 @@ export async function POST(req: Request) {
             amount: price,
             oldFunds: freshUser.funds,
             newFunds: freshUser.funds - price,
-            note: `Order ${orderId} - ${service.name}`,
+            note: `Order ${oid} - ${service.name}`,
           },
         }),
       ]);
 
       return NextResponse.json({
-        success: true,
-        gateway: "wallet",
-        redirectUrl: `/checkout/success?order=${orderId}`,
+        url: `/checkout/success?order=${oid}`,
       });
     }
 
-    // Stripe checkout
     const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -210,23 +241,18 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      client_reference_id: orderId,
+      client_reference_id: oid,
       customer_email: emailClean,
       metadata: {
         orderId: order.id,
-        oid: orderId,
+        oid,
         userId: user.id,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/checkout/success?order=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/checkout/failed?order=${orderId}`,
+      success_url: `${BASE_URL}/checkout/success?oid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/checkout/failed`,
     });
 
-    return NextResponse.json({
-      success: true,
-      gateway: "stripe",
-      redirectUrl: stripeSession.url,
-      sessionId: stripeSession.id,
-    });
+    return NextResponse.json({ url: stripeSession.url });
   } catch (error: any) {
     console.error("Checkout error:", error);
     return NextResponse.json(

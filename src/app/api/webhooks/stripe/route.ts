@@ -26,10 +26,55 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const oid = session.client_reference_id;
 
-    if (oid) {
-      try {
+    try {
+      // Wallet top-up flow
+      if (session.metadata?.type === "wallet_topup") {
+        const { userId, txnId, amount } = session.metadata;
+        const numAmount = parseFloat(amount);
+
+        const transaction = await prisma.transaction.findUnique({
+          where: { txnId },
+        });
+
+        if (transaction && transaction.status === "pending") {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+          });
+
+          if (user) {
+            await prisma.$transaction([
+              prisma.user.update({
+                where: { id: userId },
+                data: { funds: { increment: numAmount } },
+              }),
+              prisma.transaction.update({
+                where: { txnId },
+                data: {
+                  status: "complete",
+                  oldFunds: user.funds,
+                  gatewayTxn: session.payment_intent as string,
+                },
+              }),
+              prisma.fundLog.create({
+                data: {
+                  userId,
+                  type: "add",
+                  amount: numAmount,
+                  oldFunds: user.funds,
+                  newFunds: user.funds + numAmount,
+                  note: "Wallet top-up via Stripe",
+                },
+              }),
+            ]);
+          }
+        }
+        return NextResponse.json({ received: true });
+      }
+
+      // Order payment flow
+      const oid = session.client_reference_id;
+      if (oid) {
         const order = await prisma.order.findUnique({ where: { oid } });
 
         if (order && order.status === "payment") {
@@ -41,9 +86,9 @@ export async function POST(req: Request) {
             },
           });
         }
-      } catch (error) {
-        console.error("Webhook order update error:", error);
       }
+    } catch (error) {
+      console.error("Webhook processing error:", error);
     }
   }
 

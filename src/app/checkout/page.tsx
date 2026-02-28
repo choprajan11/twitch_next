@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Suspense } from "react";
+import TwitchUsernameInput from "@/components/TwitchUsernameInput";
 
 function CheckoutForm() {
   const searchParams = useSearchParams();
@@ -15,6 +16,8 @@ function CheckoutForm() {
   const serviceName = searchParams.get("serviceName") || "Service";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
 
   if (!serviceSlug || !planId) {
     router.push("/");
@@ -97,20 +100,24 @@ function CheckoutForm() {
                   </h2>
                 </div>
                 <div className="p-6 space-y-5">
-                  <div>
-                    <label htmlFor="link" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
-                      Twitch Link (Target)
-                    </label>
-                    <input
-                      type="text"
-                      id="link"
-                      name="link"
-                      required
-                      placeholder="https://twitch.tv/yourchannel"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
-                    />
-                    <p className="text-xs font-medium text-zinc-500 mt-2">Make sure the account is public.</p>
-                  </div>
+                  {isLinkService ? (
+                    <div>
+                      <label htmlFor="link" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                        {serviceSlug?.includes("clip") ? "Twitch Clip Link" : "Twitch Video Link"}
+                      </label>
+                      <input
+                        type="text"
+                        id="link"
+                        name="link"
+                        required
+                        placeholder={serviceSlug?.includes("clip") ? "https://clips.twitch.tv/YourClipHere" : "https://twitch.tv/videos/123456789"}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
+                      />
+                      <p className="text-xs font-medium text-zinc-500 mt-2">Paste the full link to your {serviceSlug?.includes("clip") ? "clip" : "video"}.</p>
+                    </div>
+                  ) : (
+                    <TwitchUsernameInput />
+                  )}
                   <div>
                     <label htmlFor="email" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
                       Email Address (For Receipt &amp; Tracking)

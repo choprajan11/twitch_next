@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { NavbarAuthButton } from "./NavbarAuthButton";
+import ServicesDropdown from "./ServicesDropdown";
 
 export function Navbar() {
-
   return (
     <nav className="sticky top-0 z-50 w-full">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -28,12 +28,7 @@ export function Navbar() {
                   <span className="flex h-1.5 w-1.5 rounded-full bg-pink-500 animate-pulse"></span>
                   Free Trial
                 </Link>
-                <Link 
-                  href="/#services" 
-                  className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
-                >
-                  Services
-                </Link>
+                <ServicesDropdown />
                 <Link 
                   href="/pricing" 
                   className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"

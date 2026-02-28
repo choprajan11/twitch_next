@@ -289,3 +289,102 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
     return { success: false, error: "Failed to update order" };
   }
 }
+
+export async function refundOrder(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true },
+    });
+    if (!order) return { success: false, error: "Order not found" };
+    if (order.status === "refunded")
+      return { success: false, error: "Already refunded" };
+
+    const refundQty =
+      order.status === "partial" && order.remains > 0
+        ? order.remains
+        : order.quantity;
+    const rate = order.price / order.quantity;
+    const refundAmount = Number((refundQty * rate).toFixed(2));
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: order.userId },
+        data: { funds: { increment: refundAmount } },
+      }),
+      prisma.order.update({
+        where: { id: orderId },
+        data: { status: "refunded" },
+      }),
+      prisma.fundLog.create({
+        data: {
+          userId: order.userId,
+          type: "refund",
+          amount: refundAmount,
+          oldFunds: order.user.funds,
+          newFunds: order.user.funds + refundAmount,
+          note: `Admin refund for order ${order.oid || order.id}`,
+        },
+      }),
+    ]);
+
+    return { success: true, refundAmount };
+  } catch (error) {
+    console.error("Failed to refund order:", error);
+    return { success: false, error: "Failed to refund order" };
+  }
+}
+
+export async function resendOrder(orderId: string) {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "pending", apiOrderId: null, log: null },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to resend order:", error);
+    return { success: false, error: "Failed to resend order" };
+  }
+}
+
+export async function updateUserFunds(
+  userId: string,
+  amount: number,
+  type: "add" | "remove"
+) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { success: false, error: "User not found" };
+
+    const numAmount = Math.abs(amount);
+    if (type === "remove" && user.funds < numAmount) {
+      return { success: false, error: "Insufficient funds" };
+    }
+
+    const newFunds =
+      type === "add" ? user.funds + numAmount : user.funds - numAmount;
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { funds: newFunds },
+      }),
+      prisma.fundLog.create({
+        data: {
+          userId,
+          type: type === "add" ? "add" : "deduct",
+          amount: numAmount,
+          oldFunds: user.funds,
+          newFunds,
+          note: `Admin ${type === "add" ? "added" : "removed"} funds`,
+        },
+      }),
+    ]);
+
+    return { success: true, newFunds };
+  } catch (error) {
+    console.error("Failed to update user funds:", error);
+    return { success: false, error: "Failed to update funds" };
+  }
+}
