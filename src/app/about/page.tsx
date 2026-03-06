@@ -169,7 +169,7 @@ export default function AboutPage() {
             <Button
               size="lg"
               style={{ backgroundColor: "#9146FF", color: "white" }}
-              variant="shadow"
+              variant="primary"
               className="font-bold px-10 h-14 text-lg shadow-[#9146FF]/30"
             >
               Get Started Now

@@ -120,17 +120,16 @@ export default function RefillsPage() {
                             size="sm" 
                             style={{ backgroundColor: '#9146FF', color: 'white' }} 
                             className="font-bold rounded-xl shadow-sm shadow-[#9146FF]/20"
-                            isLoading={isPending}
+                            isDisabled={isPending}
                             onPress={() => handleAction(refill.id, 'completed')}
                           >
                             Approve
                           </Button>
                           <Button 
                             size="sm" 
-                            color="danger" 
-                            variant="flat" 
-                            className="font-bold rounded-xl"
-                            isLoading={isPending}
+                            variant="secondary" 
+                            className="font-bold rounded-xl bg-red-500/10 text-red-600 dark:text-red-400"
+                            isDisabled={isPending}
                             onPress={() => handleAction(refill.id, 'rejected')}
                           >
                             Reject

@@ -10,7 +10,7 @@ interface OrderStatusBadgeProps {
   serviceName: string;
   serviceSlug: string;
   quantity: number;
-  link: string;
+  link?: string | null;
   showRetry?: boolean;
 }
 

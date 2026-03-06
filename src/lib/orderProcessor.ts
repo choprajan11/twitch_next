@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { connectApi } from "./providers";
 import { createStreamRiseOrder, getStreamRiseOrderStatus, isStreamRiseService } from "./streamrise";
@@ -102,7 +103,7 @@ async function sendSingleOrder(
         where: { id: order.id },
         data: {
           apiOrderId: response.orderId,
-          log: null,
+          log: Prisma.DbNull,
           status: "processing",
         },
       });
@@ -193,7 +194,7 @@ async function sendSingleOrder(
       where: { id: order.id },
       data: {
         apiOrderId: String(apiOrderId),
-        log: null,
+        log: Prisma.DbNull,
         status: "processing",
       },
     });
@@ -220,7 +221,7 @@ async function updateSingleOrder(
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            log: null,
+            log: Prisma.DbNull,
             status: "completed",
             remains: 0,
           },
@@ -301,7 +302,7 @@ async function updateSingleOrder(
     await prisma.order.update({
       where: { id: order.id },
       data: {
-        log: null,
+        log: Prisma.DbNull,
         status: newStatus,
         startCount: data.start_count ?? order.startCount,
         remains: data.remains ?? order.remains,

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
@@ -14,7 +15,7 @@ interface Transaction {
   createdAt: string;
 }
 
-export default function WalletPage() {
+function WalletContent() {
   const searchParams = useSearchParams();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -163,7 +164,7 @@ export default function WalletPage() {
             </div>
             <Button
               onPress={handleAddFunds}
-              isLoading={isPending}
+              isDisabled={isPending}
               className="h-auto bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold rounded-xl shadow-lg shadow-[#9146FF]/20 px-6"
             >
               Add Funds
@@ -275,5 +276,26 @@ export default function WalletPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WalletPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
+              Wallet
+            </h1>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">
+              Loading wallet...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <WalletContent />
+    </Suspense>
   );
 }

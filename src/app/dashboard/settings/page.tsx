@@ -194,7 +194,7 @@ export default function DashboardSettingsPage() {
 
           <Button
             onPress={handleSaveProfile}
-            isLoading={isSaving}
+            isDisabled={isSaving}
             className="bg-[#9146FF] text-white font-bold rounded-xl shadow-lg shadow-[#9146FF]/20"
           >
             Save Changes
@@ -238,13 +238,13 @@ export default function DashboardSettingsPage() {
                   <div className="flex gap-2">
                     <Button
                       onPress={handleSendResetCode}
-                      isLoading={isResetting}
+                      isDisabled={isResetting}
                       className="bg-[#9146FF] text-white font-bold rounded-xl"
                     >
                       Send Reset Code
                     </Button>
                     <Button
-                      variant="flat"
+                      variant="secondary"
                       onPress={() => setShowResetForm(false)}
                       className="font-bold rounded-xl"
                     >
@@ -281,13 +281,13 @@ export default function DashboardSettingsPage() {
                   <div className="flex gap-2">
                     <Button
                       onPress={handleResetPassword}
-                      isLoading={isResetting}
+                      isDisabled={isResetting}
                       className="bg-[#9146FF] text-white font-bold rounded-xl"
                     >
                       Reset Password
                     </Button>
                     <Button
-                      variant="flat"
+                      variant="secondary"
                       onPress={() => {
                         setShowResetForm(false);
                         setResetStep("send");

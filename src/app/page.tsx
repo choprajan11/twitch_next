@@ -301,7 +301,7 @@ export default function Home() {
                 <Button 
                   size="lg" 
                   style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                  variant="shadow" 
+                  variant="primary" 
                   className="font-bold px-10 h-14 text-lg shadow-[#9146FF]/30"
                 >
                   Get Started Now
@@ -310,7 +310,7 @@ export default function Home() {
               <Link href="/contact">
                 <Button 
                   size="lg" 
-                  variant="bordered" 
+                  variant="outline" 
                   className="font-bold px-10 h-14 text-lg border-2 border-zinc-200 dark:border-zinc-700"
                 >
                   Contact Sales

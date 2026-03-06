@@ -27,7 +27,7 @@ export async function getServiceWithPlans(serviceId: string) {
       id: service.id,
       name: service.name,
       slug: service.slug,
-      plans: (service.plans as Plan[]) || [],
+      plans: (service.plans as unknown as Plan[]) || [],
     };
   } catch (error) {
     console.error("Failed to fetch service:", error);

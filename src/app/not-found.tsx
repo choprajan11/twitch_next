@@ -52,7 +52,7 @@ export default function NotFound() {
               <Button
                 size="lg"
                 style={{ backgroundColor: "#9146FF", color: "white" }}
-                variant="shadow"
+                variant="primary"
                 className="font-bold px-8 h-12 shadow-[#9146FF]/30"
               >
                 <svg
@@ -76,7 +76,7 @@ export default function NotFound() {
             <Link href="/contact">
               <Button
                 size="lg"
-                variant="bordered"
+                variant="outline"
                 className="font-bold px-8 h-12 border-2"
               >
                 Contact Support

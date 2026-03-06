@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export async function getAdminStats() {
@@ -326,7 +327,7 @@ export async function resendOrder(orderId: string) {
   try {
     await prisma.order.update({
       where: { id: orderId },
-      data: { status: "pending", apiOrderId: null, log: null },
+      data: { status: "pending", apiOrderId: null, log: Prisma.DbNull },
     });
     return { success: true };
   } catch (error) {

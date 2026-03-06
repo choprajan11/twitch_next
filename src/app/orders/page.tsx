@@ -132,7 +132,7 @@ export default function OrdersPage() {
               size="lg"
               className="w-full h-12 font-bold text-base"
               style={{ backgroundColor: "#9146FF", color: "white" }}
-              isLoading={loading}
+              isDisabled={loading}
             >
               Track Order
             </Button>

@@ -57,7 +57,7 @@ export default function FAQPage() {
               <Link href="/orders">
                 <Button
                   size="lg"
-                  variant="bordered"
+                  variant="outline"
                   className="font-bold px-8 border-2"
                 >
                   Track Order

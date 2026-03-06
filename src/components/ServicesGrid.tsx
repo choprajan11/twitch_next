@@ -94,7 +94,7 @@ export default async function ServicesGrid() {
   return (
     <div className="bento-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
       {services.map((service, index) => {
-        const plans = (service.plans as Plan[]) || [];
+        const plans = (service.plans as unknown as Plan[]) || [];
         const iconData = serviceIcons[service.slug] || serviceIcons.default;
         
         return (

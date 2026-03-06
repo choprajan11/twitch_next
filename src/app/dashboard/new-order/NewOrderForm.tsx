@@ -170,9 +170,11 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
             <Button onPress={resetForm} style={{ backgroundColor: "#9146FF", color: "white" }} className="flex-1 h-10 font-bold rounded-xl shadow-sm shadow-[#9146FF]/20">
               New Order
             </Button>
-            <Button as={Link} href="/dashboard/orders" variant="bordered" className="flex-1 h-10 font-semibold rounded-xl border-[rgba(145,70,255,0.15)] hover:border-[#9146FF]/30">
-              My Orders
-            </Button>
+            <Link href="/dashboard/orders" className="flex-1">
+              <Button variant="outline" className="w-full h-10 font-semibold rounded-xl border-[rgba(145,70,255,0.15)] hover:border-[#9146FF]/30">
+                My Orders
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -221,7 +223,7 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
         <div>
           <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Select Plan</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {(selectedService.plans as Plan[])?.filter((p) => p && (p.quantity || p.duration) && p.price != null).map((plan) => {
+            {(selectedService.plans as unknown as Plan[])?.filter((p) => p && (p.quantity || p.duration) && p.price != null).map((plan) => {
               const active = selectedPlan?.id === plan.id;
               return (
                 <button
@@ -353,8 +355,7 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
         <div className="flex items-center gap-4">
           <Button
             type="submit"
-            isLoading={isSubmitting}
-            isDisabled={gateway === "wallet" && walletBalance < selectedPlan.price}
+            isDisabled={isSubmitting || (gateway === "wallet" && walletBalance < selectedPlan.price)}
             style={{ backgroundColor: "#9146FF", color: "white" }}
             className="h-12 px-10 font-bold rounded-2xl shadow-lg shadow-[#9146FF]/20 text-base"
           >

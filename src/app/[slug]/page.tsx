@@ -306,7 +306,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
-  const plans = service.plans as Plan[];
+  const plans = service.plans as unknown as Plan[];
   const content = getServiceContent(slug, service.name);
 
   return (
@@ -373,8 +373,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                         <Button
                           className={`w-full font-bold h-11 ${plan.popular ? "shadow-lg" : ""}`}
                           style={plan.popular ? { backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
-                          variant={plan.popular ? "solid" : "flat"}
-                          color="secondary"
+                          variant={plan.popular ? "primary" : "secondary"}
                         >
                           Buy Now
                         </Button>
@@ -537,7 +536,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <Link href={`/${service.slug}#`}>
               <Button
                 size="lg"
-                variant="shadow"
+                variant="primary"
                 className="font-bold px-10 h-14 text-lg"
                 style={{ backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` }}
               >

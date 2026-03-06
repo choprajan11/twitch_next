@@ -235,7 +235,7 @@ export default function OrdersPage() {
                     <td className="px-6 py-3.5 text-right relative">
                       <Button
                         size="sm"
-                        variant="bordered"
+                        variant="outline"
                         onPress={() =>
                           setActiveMenu(
                             activeMenu === order.id ? null : order.id

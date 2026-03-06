@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const plans = service.plans as Plan[];
+    const plans = service.plans as unknown as Plan[];
     const selectedPlan = plans.find((p) => p.id === planId);
     if (!selectedPlan) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });

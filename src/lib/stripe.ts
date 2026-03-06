@@ -21,7 +21,7 @@ export const stripeConfig = {
 };
 
 export const stripe = new Stripe(stripeConfig.secretKey, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2026-01-28.clover",
 });
 
 interface ProcessRequestData {
@@ -121,8 +121,8 @@ export async function verifyStripeSession(sessionId: string): Promise<VerifyResp
     return {
       status,
       orderId,
-      oid,
-      txnId: txnId || undefined,
+      oid: oid ?? undefined,
+      txnId: txnId ?? undefined,
       amount,
     };
   } catch (error: any) {

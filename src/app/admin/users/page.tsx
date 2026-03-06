@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
               <div className="flex gap-2">
                 <Button
                   onPress={handleFundSubmit}
-                  isLoading={isPending}
+                  isDisabled={isPending}
                   className={`flex-1 font-bold rounded-xl ${
                     fundType === "add"
                       ? "bg-green-600 text-white"
@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
                   {fundType === "add" ? "Add" : "Remove"} Funds
                 </Button>
                 <Button
-                  variant="flat"
+                  variant="secondary"
                   onPress={() => {
                     setFundModal(null);
                     setFundError(null);
@@ -311,10 +311,13 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-3.5 text-right">
                       <Button
                         size="sm"
-                        variant="flat"
-                        color={user.status === "active" ? "danger" : "success"}
-                        className="font-semibold rounded-xl"
-                        isLoading={isPending}
+                        variant="secondary"
+                        className={`font-semibold rounded-xl ${
+                          user.status === "active"
+                            ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                            : "bg-green-500/10 text-green-600 dark:text-green-400"
+                        }`}
+                        isDisabled={isPending}
                         onPress={() => handleToggleStatus(user.id)}
                       >
                         {user.status === "active" ? "Ban" : "Unban"}

@@ -91,7 +91,7 @@ export default function PackagesPage() {
           <p className="text-zinc-500 mt-1 text-sm">The service you&apos;re looking for doesn&apos;t exist.</p>
         </div>
         <Link href="/admin/services">
-          <Button variant="bordered" className="font-semibold rounded-xl">
+          <Button variant="outline" className="font-semibold rounded-xl">
             ← Back to Services
           </Button>
         </Link>
@@ -115,7 +115,7 @@ export default function PackagesPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/admin/services">
-            <Button variant="bordered" className="font-semibold border-[rgba(145,70,255,0.15)] rounded-xl">
+            <Button variant="outline" className="font-semibold border-[rgba(145,70,255,0.15)] rounded-xl">
               Cancel
             </Button>
           </Link>
@@ -123,7 +123,6 @@ export default function PackagesPage() {
             style={{ backgroundColor: '#9146FF', color: 'white' }} 
             className="font-bold shadow-lg shadow-[#9146FF]/20 rounded-xl"
             onPress={handleSave}
-            isLoading={isPending}
             isDisabled={isPending}
           >
             Save Changes
@@ -185,7 +184,7 @@ export default function PackagesPage() {
               </div>
             </div>
             <Button
-              variant="flat"
+              variant="secondary"
               size="sm"
               className="text-red-500 bg-red-500/10 font-semibold rounded-lg shrink-0"
               onPress={() => removePlan(index)}

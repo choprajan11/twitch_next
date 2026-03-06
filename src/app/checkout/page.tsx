@@ -231,7 +231,7 @@ function CheckoutForm() {
                     </div>
                     <Button
                       type="submit"
-                      isLoading={isSubmitting}
+                      isDisabled={isSubmitting}
                       className="w-full h-14 bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold text-lg shadow-lg shadow-[#9146FF]/30 transition-transform active:scale-95 glow-animation rounded-xl"
                     >
                       {isSubmitting ? "Processing..." : "Pay Securely"}

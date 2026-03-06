@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     let planName = "Admin Custom";
 
     if (planId && service.plans) {
-      const plans = service.plans as Plan[];
+      const plans = service.plans as unknown as Plan[];
       const selectedPlan = plans.find((p) => p.id === planId);
       if (selectedPlan) {
         quantity = selectedPlan.quantity;

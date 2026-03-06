@@ -139,7 +139,7 @@ export default function ContactPage() {
                 size="lg"
                 className="w-full h-12 font-bold text-base"
                 style={{ backgroundColor: "#9146FF", color: "white" }}
-                isLoading={loading}
+                isDisabled={loading}
               >
                 Send Message
               </Button>

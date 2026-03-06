@@ -94,7 +94,7 @@ export default function BanListPage() {
           />
           <Button
             onPress={handleAdd}
-            isLoading={isPending}
+            isDisabled={isPending}
             className="bg-[#9146FF] text-white font-bold rounded-xl shadow-lg shadow-[#9146FF]/20 px-6"
           >
             Ban Username
@@ -157,11 +157,10 @@ export default function BanListPage() {
                     <td className="px-6 py-3.5 text-right">
                       <Button
                         size="sm"
-                        variant="flat"
-                        color="success"
-                        isLoading={isPending}
+                        variant="secondary"
+                        isDisabled={isPending}
                         onPress={() => handleRemove(user.id)}
-                        className="font-semibold rounded-xl"
+                        className="font-semibold rounded-xl bg-green-500/10 text-green-600 dark:text-green-400"
                       >
                         Unban
                       </Button>

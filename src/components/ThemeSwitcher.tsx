@@ -22,7 +22,7 @@ export function ThemeSwitcher() {
 
   return (
     <Button
-      variant="light"
+      variant="ghost"
       isIconOnly
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}

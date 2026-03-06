@@ -20,7 +20,14 @@ export default function ServiceFAQ({ faqs, color }: { faqs: FAQ[]; color: string
             className={`bento-card-static overflow-hidden transition-all duration-300 ${
               isOpen ? "ring-1" : ""
             }`}
-            style={isOpen ? { ringColor: `${color}30`, borderColor: `${color}25` } : {}}
+            style={
+              isOpen
+                ? {
+                    borderColor: `${color}25`,
+                    boxShadow: `0 0 0 1px ${color}30`,
+                  }
+                : undefined
+            }
           >
             <button
               onClick={() => setOpenIndex(isOpen ? null : i)}

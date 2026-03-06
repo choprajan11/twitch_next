@@ -75,9 +75,9 @@ export default function HeroEmailForm() {
               type="submit"
               size="lg"
               style={{ backgroundColor: "#9146FF", color: "white" }}
-              variant="shadow"
+              variant="primary"
               className="font-bold px-6 sm:px-8 h-10 sm:h-12 text-sm sm:text-base shadow-[#9146FF]/30 glow-animation whitespace-nowrap rounded-xl"
-              isLoading={isLoading}
+              isDisabled={isLoading}
             >
               Get Started Free
             </Button>

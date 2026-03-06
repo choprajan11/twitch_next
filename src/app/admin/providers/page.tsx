@@ -154,13 +154,13 @@ export default function ProvidersPage() {
           <div className="flex gap-2">
             <Button
               onPress={handleAdd}
-              isLoading={isPending}
+              isDisabled={isPending}
               className="bg-[#9146FF] text-white font-bold rounded-xl"
             >
               Verify & Add
             </Button>
             <Button
-              variant="flat"
+              variant="secondary"
               onPress={() => {
                 setShowAddForm(false);
                 setError(null);
@@ -236,8 +236,8 @@ export default function ProvidersPage() {
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
-                          variant="bordered"
-                          isLoading={checkingId === provider.id}
+                          variant="outline"
+                          isDisabled={checkingId === provider.id}
                           onPress={() => handleCheckBalance(provider.id)}
                           className="font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30"
                         >
@@ -245,10 +245,9 @@ export default function ProvidersPage() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="flat"
-                          color="danger"
+                          variant="secondary"
                           onPress={() => handleDelete(provider.id)}
-                          className="font-semibold rounded-xl"
+                          className="font-semibold rounded-xl bg-red-500/10 text-red-600 dark:text-red-400"
                         >
                           Remove
                         </Button>

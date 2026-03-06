@@ -201,7 +201,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             size="lg"
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: '#9146FF', color: 'white' }}
-            isLoading={isLoading}
+            isDisabled={isLoading}
           >
             Continue
           </Button>
@@ -239,8 +239,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             size="lg"
             className="w-full h-12 font-bold text-base border-2 border-zinc-200 dark:border-zinc-700 bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#9146FF] transition-colors"
             onClick={handlePasswordLogin}
-            isLoading={isLoading}
-            isDisabled={!email || !password}
+            isDisabled={isLoading || !email || !password}
           >
             Sign In with Password
           </Button>
@@ -282,8 +281,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             size="lg"
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: '#9146FF', color: 'white' }}
-            isLoading={isLoading}
-            isDisabled={code.length !== 6}
+            isDisabled={isLoading || code.length !== 6}
           >
             Verify Code
           </Button>
@@ -328,7 +326,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             size="lg"
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: '#9146FF', color: 'white' }}
-            isLoading={isLoading}
+            isDisabled={isLoading}
           >
             {isNewUser ? 'Create Account' : 'Update Password'}
           </Button>

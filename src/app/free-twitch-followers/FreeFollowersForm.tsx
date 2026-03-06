@@ -289,7 +289,7 @@ export default function FreeFollowersForm() {
           <Button
             type="submit"
             size="lg"
-            isLoading={isLoading}
+            isDisabled={isLoading}
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: "#9146FF", color: "white" }}
           >
@@ -338,8 +338,7 @@ export default function FreeFollowersForm() {
             size="lg"
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: "#9146FF", color: "white" }}
-            isLoading={isLoading}
-            isDisabled={code.length !== 6}
+            isDisabled={isLoading || code.length !== 6}
           >
             Verify & Get Free Followers
           </Button>
@@ -387,7 +386,7 @@ export default function FreeFollowersForm() {
             size="lg"
             className="w-full h-12 font-bold text-base"
             style={{ backgroundColor: "#9146FF", color: "white" }}
-            isLoading={isLoading}
+            isDisabled={isLoading}
           >
             {isLoading ? "Processing..." : "Set Password & Get Followers"}
           </Button>

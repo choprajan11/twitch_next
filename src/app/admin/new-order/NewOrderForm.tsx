@@ -166,9 +166,11 @@ export default function AdminNewOrderForm({ services }: Props) {
             <Button onPress={resetForm} style={{ backgroundColor: "#9146FF", color: "white" }} className="flex-1 h-10 font-bold rounded-xl shadow-sm shadow-[#9146FF]/20">
               Create Another
             </Button>
-            <Button as="a" href="/admin/orders" variant="bordered" className="flex-1 h-10 font-semibold rounded-xl border-[rgba(145,70,255,0.15)] hover:border-[#9146FF]/30">
-              View Orders
-            </Button>
+            <a href="/admin/orders" className="flex-1">
+              <Button variant="outline" className="w-full h-10 font-semibold rounded-xl border-[rgba(145,70,255,0.15)] hover:border-[#9146FF]/30">
+                View Orders
+              </Button>
+            </a>
           </div>
         </div>
       </div>
@@ -217,7 +219,7 @@ export default function AdminNewOrderForm({ services }: Props) {
         <div>
           <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Select Quantity</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {(selectedService.plans as Plan[])?.filter((p) => p && p.quantity).map((plan) => {
+            {(selectedService.plans as unknown as Plan[])?.filter((p) => p && p.quantity).map((plan) => {
               const active = selectedPlan?.id === plan.id && !useCustomQty;
               return (
                 <button
@@ -325,7 +327,7 @@ export default function AdminNewOrderForm({ services }: Props) {
         <div className="flex items-center gap-4">
           <Button
             type="submit"
-            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
             style={{ backgroundColor: "#9146FF", color: "white" }}
             className="h-12 px-10 font-bold rounded-2xl shadow-lg shadow-[#9146FF]/20 text-base"
           >

@@ -164,10 +164,9 @@ export default function ClipDownloaderPage() {
               <Button 
                 type="submit"
                 size="lg" 
-                isLoading={isProcessing}
-                isDisabled={!url.trim()}
+                isDisabled={isProcessing || !url.trim()}
                 style={{ backgroundColor: '#9146FF', color: 'white' }} 
-                variant="shadow" 
+                variant="primary" 
                 className="font-bold h-14 px-10 text-base shadow-[#9146FF]/30 w-full sm:w-auto shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? "Fetching..." : "Fetch Clip"}
@@ -260,7 +259,7 @@ export default function ClipDownloaderPage() {
                   {/* Download Button */}
                   <Button 
                     size="lg"
-                    isLoading={isDownloading}
+                    isDisabled={isDownloading}
                     onPress={handleDownload}
                     className="w-full sm:w-auto font-bold h-12 px-8 text-md bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 transition-shadow"
                   >

@@ -43,7 +43,7 @@ export function NavbarAuthButton() {
       <Link href="/dashboard">
         <Button 
           style={{ backgroundColor: '#9146FF', color: 'white' }} 
-          variant="shadow" 
+          variant="primary" 
           className="font-bold shadow-[#9146FF]/30 rounded-xl"
         >
           Dashboard
@@ -60,7 +60,7 @@ export function NavbarAuthButton() {
     <Link href="/login">
       <Button 
         style={{ backgroundColor: '#9146FF', color: 'white' }} 
-        variant="shadow" 
+        variant="primary" 
         className="font-bold shadow-[#9146FF]/30 rounded-xl"
       >
         Get Started

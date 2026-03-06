@@ -127,6 +127,9 @@ export default function ServicesPage() {
       active: newServiceActive,
       plans: 0,
       sales: 0,
+      apiId: null,
+      apiServiceId: null,
+      type: null,
     };
     
     setServices([...services, newService]);
@@ -192,8 +195,7 @@ export default function ServicesPage() {
                 </div>
                 <Switch 
                   isSelected={svc.active} 
-                  onValueChange={() => handleToggleService(svc.id)}
-                  color="secondary"
+                  onChange={() => handleToggleService(svc.id)}
                   isDisabled={isPending}
                 />
               </div>
@@ -211,14 +213,14 @@ export default function ServicesPage() {
 
               <div className="mt-4 flex gap-2">
                 <Button 
-                  variant="bordered" 
+                  variant="outline" 
                   className="flex-1 font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30"
                   onPress={() => window.location.href = `/admin/services/${svc.id}/packages`}
                 >
                   Edit Packages
                 </Button>
                 <Button 
-                  variant="flat" 
+                  variant="secondary" 
                   className="flex-1 font-semibold bg-[var(--bento-bg)] text-zinc-900 dark:text-white rounded-xl"
                   onPress={() => openEditModal(svc)}
                 >
@@ -285,8 +287,7 @@ export default function ServicesPage() {
                   <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">Set Active Immediately</span>
                   <Switch 
                     isSelected={newServiceActive}
-                    onValueChange={setNewServiceActive}
-                    color="secondary" 
+                    onChange={setNewServiceActive}
                     size="sm" 
                   />
                 </div>
@@ -294,7 +295,7 @@ export default function ServicesPage() {
               
               <div className="px-6 py-4 border-t border-[rgba(145,70,255,0.08)] flex justify-end gap-2">
                 <Button 
-                  variant="flat" 
+                  variant="secondary" 
                   className="font-semibold rounded-xl bg-[var(--bento-bg)]"
                   onPress={() => setIsModalOpen(false)}
                 >
@@ -427,7 +428,7 @@ export default function ServicesPage() {
               
               <div className="px-6 py-4 border-t border-[rgba(145,70,255,0.08)] flex justify-end gap-2">
                 <Button 
-                  variant="flat" 
+                  variant="secondary" 
                   className="font-semibold rounded-xl bg-[var(--bento-bg)]"
                   onPress={() => setIsEditModalOpen(false)}
                 >
@@ -438,7 +439,6 @@ export default function ServicesPage() {
                   className="font-bold rounded-xl shadow-sm shadow-[#9146FF]/20"
                   onPress={handleUpdateService}
                   isDisabled={!editName.trim() || !editCategory.trim() || isPending}
-                  isLoading={isPending}
                 >
                   Save Changes
                 </Button>

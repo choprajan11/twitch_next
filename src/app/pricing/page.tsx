@@ -99,7 +99,7 @@ export default async function PricingPage() {
       <section className="w-full max-w-7xl mx-auto px-4 pb-16 lg:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {services.map((service) => {
-            const plans = (service.plans as Plan[]) || [];
+            const plans = (service.plans as unknown as Plan[]) || [];
             if (plans.length === 0) return null;
             const theme = getServiceTheme(service.slug);
 
@@ -174,7 +174,7 @@ export default async function PricingPage() {
                                 : "group-hover:border-[#9146FF] group-hover:text-[#9146FF]"
                             }`}
                             style={plan.popular ? { backgroundColor: "#9146FF", color: "white" } : {}}
-                            variant={plan.popular ? "solid" : "bordered"}
+                            variant={plan.popular ? "primary" : "outline"}
                           >
                             Get Started
                           </Button>
@@ -270,7 +270,7 @@ export default async function PricingPage() {
                 <Button
                   size="lg"
                   style={{ backgroundColor: '#9146FF', color: 'white' }}
-                  variant="shadow"
+                  variant="primary"
                   className="font-bold px-10 h-14 text-lg shadow-[#9146FF]/30"
                 >
                   Browse Services
@@ -279,7 +279,7 @@ export default async function PricingPage() {
               <Link href="/contact">
                 <Button
                   size="lg"
-                  variant="bordered"
+                  variant="outline"
                   className="font-bold px-10 h-14 text-lg border-2 border-zinc-200 dark:border-zinc-700"
                 >
                   Contact Us
