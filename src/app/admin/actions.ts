@@ -4,34 +4,27 @@ import { prisma } from "@/lib/prisma";
 
 export async function getAdminStats() {
   try {
-    const [
-      totalRevenue,
-      ordersToday,
-      pendingRefills,
-      newCustomersThisMonth,
-    ] = await Promise.all([
-      prisma.order.aggregate({
-        _sum: { price: true },
-        where: { status: { not: "payment" } },
-      }),
-      prisma.order.count({
-        where: {
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
+    const totalRevenue = await prisma.order.aggregate({
+      _sum: { price: true },
+      where: { status: { not: "payment" } },
+    });
+    const ordersToday = await prisma.order.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
-      }),
-      prisma.order.count({
-        where: { status: "refill" },
-      }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: new Date(new Date().setDate(1)),
-          },
+      },
+    });
+    const pendingRefills = await prisma.order.count({
+      where: { status: "refill" },
+    });
+    const newCustomersThisMonth = await prisma.user.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().setDate(1)),
         },
-      }),
-    ]);
+      },
+    });
 
     return {
       totalRevenue: totalRevenue._sum.price || 0,
@@ -81,18 +74,16 @@ export async function getAllOrders(page = 1, limit = 20) {
   try {
     const skip = (page - 1) * limit;
     
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          service: { select: { name: true } },
-          user: { select: { email: true, name: true } },
-        },
-      }),
-      prisma.order.count(),
-    ]);
+    const orders = await prisma.order.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        service: { select: { name: true } },
+        user: { select: { email: true, name: true } },
+      },
+    });
+    const total = await prisma.order.count();
 
     return {
       orders: orders.map((order) => ({
@@ -120,17 +111,15 @@ export async function getAllUsers(page = 1, limit = 20) {
   try {
     const skip = (page - 1) * limit;
     
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          _count: { select: { orders: true } },
-        },
-      }),
-      prisma.user.count(),
-    ]);
+    const users = await prisma.user.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { orders: true } },
+      },
+    });
+    const total = await prisma.user.count();
 
     return {
       users: users.map((user) => ({
@@ -215,22 +204,20 @@ export async function getCustomers(page = 1, limit = 20) {
   try {
     const skip = (page - 1) * limit;
     
-    const [customers, total] = await Promise.all([
-      prisma.user.findMany({
-        skip,
-        take: limit,
-        where: { role: "user" },
-        orderBy: { createdAt: "desc" },
-        include: {
-          orders: {
-            select: { price: true },
-            where: { status: { not: "payment" } },
-          },
-          _count: { select: { orders: true } },
+    const customers = await prisma.user.findMany({
+      skip,
+      take: limit,
+      where: { role: "user" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        orders: {
+          select: { price: true },
+          where: { status: { not: "payment" } },
         },
-      }),
-      prisma.user.count({ where: { role: "user" } }),
-    ]);
+        _count: { select: { orders: true } },
+      },
+    });
+    const total = await prisma.user.count({ where: { role: "user" } });
 
     return {
       customers: customers.map((customer) => ({

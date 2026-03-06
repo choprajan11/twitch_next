@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Button, Switch } from "@heroui/react";
-import { getAllServices, toggleServiceStatus, updateService } from "./actions";
+import { getAllServices, toggleServiceStatus, updateService, getProviders } from "./actions";
 
 interface Service {
   id: string;
@@ -12,6 +12,15 @@ interface Service {
   active: boolean;
   plans: number;
   sales: number;
+  apiId: string | null;
+  apiServiceId: string | null;
+  type: string | null;
+}
+
+interface Provider {
+  id: string;
+  name: string;
+  url: string;
 }
 
 export default function ServicesPage() {
@@ -23,6 +32,10 @@ export default function ServicesPage() {
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editSlug, setEditSlug] = useState("");
+  const [editApiId, setEditApiId] = useState<string>("");
+  const [editApiServiceId, setEditApiServiceId] = useState("");
+  const [editType, setEditType] = useState("");
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [newServiceName, setNewServiceName] = useState("");
   const [newServiceCategory, setNewServiceCategory] = useState("");
   const [newServiceActive, setNewServiceActive] = useState(true);
@@ -35,8 +48,12 @@ export default function ServicesPage() {
   async function loadServices() {
     setIsLoading(true);
     try {
-      const data = await getAllServices();
+      const [data, providerData] = await Promise.all([
+        getAllServices(),
+        getProviders(),
+      ]);
       setServices(data);
+      setProviders(providerData);
     } catch (error) {
       console.error("Failed to load services:", error);
     } finally {
@@ -60,6 +77,9 @@ export default function ServicesPage() {
     setEditName(service.name);
     setEditCategory(service.category);
     setEditSlug(service.slug);
+    setEditApiId(service.apiId || "");
+    setEditApiServiceId(service.apiServiceId || "");
+    setEditType(service.type || "");
     setIsEditModalOpen(true);
   };
 
@@ -71,12 +91,23 @@ export default function ServicesPage() {
         name: editName.trim(),
         category: editCategory.trim(),
         slug: editSlug.trim() || editName.toLowerCase().replace(/\s+/g, '-'),
+        apiId: editApiId || null,
+        apiServiceId: editApiServiceId.trim() || null,
+        type: editType.trim() || null,
       });
       
       if (result.success) {
         setServices(services.map(svc => 
           svc.id === selectedService.id 
-            ? { ...svc, name: editName.trim(), category: editCategory.trim(), slug: editSlug.trim() || editName.toLowerCase().replace(/\s+/g, '-') } 
+            ? { 
+                ...svc, 
+                name: editName.trim(), 
+                category: editCategory.trim(), 
+                slug: editSlug.trim() || editName.toLowerCase().replace(/\s+/g, '-'),
+                apiId: editApiId || null,
+                apiServiceId: editApiServiceId.trim() || null,
+                type: editType.trim() || null,
+              } 
             : svc
         ));
         setIsEditModalOpen(false);
@@ -150,7 +181,14 @@ export default function ServicesPage() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{svc.name}</h3>
-                  <span className="text-xs font-bold text-[#9146FF] uppercase tracking-wider">{svc.category}</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-bold text-[#9146FF] uppercase tracking-wider">{svc.category}</span>
+                    {svc.apiId && svc.apiServiceId ? (
+                      <span className="text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-md">API #{svc.apiServiceId}</span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-md">No API</span>
+                    )}
+                  </div>
                 </div>
                 <Switch 
                   isSelected={svc.active} 
@@ -328,6 +366,62 @@ export default function ServicesPage() {
                     placeholder="e.g. Engagement"
                     className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    Service Type
+                  </label>
+                  <select
+                    value={editType}
+                    onChange={(e) => setEditType(e.target.value)}
+                    className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
+                  >
+                    <option value="">None</option>
+                    <option value="followers">Followers</option>
+                    <option value="viewers">Viewers</option>
+                    <option value="chat_bots">Chat Bots</option>
+                    <option value="clip_views">Clip Views</option>
+                    <option value="video_views">Video Views</option>
+                  </select>
+                </div>
+
+                <div className="pt-3 border-t border-[rgba(145,70,255,0.08)]">
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">API Configuration</p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                        API Provider
+                      </label>
+                      <select
+                        value={editApiId}
+                        onChange={(e) => setEditApiId(e.target.value)}
+                        className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
+                      >
+                        <option value="">No Provider</option>
+                        {providers.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({new URL(p.url).hostname})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                        API Service ID
+                      </label>
+                      <input
+                        type="text"
+                        value={editApiServiceId}
+                        onChange={(e) => setEditApiServiceId(e.target.value)}
+                        placeholder="e.g. 8"
+                        className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm font-mono"
+                      />
+                      <p className="text-xs text-zinc-500 mt-1">The service ID from the SMM panel&apos;s service list.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               

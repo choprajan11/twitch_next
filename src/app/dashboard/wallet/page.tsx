@@ -76,8 +76,8 @@ export default function WalletPage() {
           return;
         }
 
-        if (data.redirectUrl) {
-          window.location.href = data.redirectUrl;
+        if (data.url) {
+          window.location.href = data.url;
         } else {
           setSuccess("Funds added successfully!");
           loadWalletData();

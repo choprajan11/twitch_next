@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isDisposableEmail, rateLimit } from "@/lib/security";
+import { rateLimit } from "@/lib/security";
+import { getSession } from "@/lib/auth";
+import { processOrderImmediately } from "@/lib/orderProcessor";
 
 const FREE_QUANTITY = 10;
 
@@ -14,27 +16,23 @@ function generateOid(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, email } = await req.json();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: "Please verify your email first." },
+        { status: 401 }
+      );
+    }
 
-    if (!username || !email) {
-      return NextResponse.json({ error: "Username and email are required" }, { status: 400 });
+    const { username } = await req.json();
+
+    if (!username) {
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
     const cleanUsername = username.trim().replace(/^@/, "").toLowerCase();
     if (!/^[a-z0-9_]{3,25}$/.test(cleanUsername)) {
       return NextResponse.json({ error: "Please enter a valid Twitch username" }, { status: 400 });
-    }
-
-    const emailClean = email.toLowerCase().trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
-      return NextResponse.json({ error: "Please provide a valid email address" }, { status: 400 });
-    }
-
-    if (isDisposableEmail(emailClean)) {
-      return NextResponse.json(
-        { error: "Disposable email addresses are not allowed. Please use a real email." },
-        { status: 400 }
-      );
     }
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -70,11 +68,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.user.upsert({
-      where: { email: emailClean },
-      create: { email: emailClean },
-      update: {},
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
     });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     const existingOrder = await prisma.order.findFirst({
       where: {
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     const oid = generateOid();
 
-    await prisma.order.create({
+    const order = await prisma.order.create({
       data: {
         oid,
         userId: user.id,
@@ -115,6 +115,9 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    const processed = await processOrderImmediately(order.id);
+    console.log(`Free trial order ${oid} processing result:`, processed);
 
     return NextResponse.json({
       success: true,

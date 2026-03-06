@@ -14,17 +14,17 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [sent, updated, cleaned] = await Promise.all([
-      sendPendingOrders(),
+    const [updated, cleaned, retried] = await Promise.all([
       updateProcessingOrders(),
       cleanupStalePaymentOrders(),
+      sendPendingOrders(),
     ]);
 
     return NextResponse.json({
       success: true,
-      sent,
       updated,
       cleaned,
+      retried,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {

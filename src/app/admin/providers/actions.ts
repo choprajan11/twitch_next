@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { verifyApi, connectApi } from "@/lib/providers";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 export async function getProviders() {
   try {
@@ -45,11 +46,14 @@ export async function addProvider(url: string, key: string) {
 
     const hostName = new URL(trimmedUrl).hostname.split(".")[0];
 
+    // Encrypt the API key before storing
+    const encryptedKey = encrypt(key);
+
     await prisma.api.create({
       data: {
         name: hostName,
         url: trimmedUrl,
-        key,
+        key: encryptedKey,
         status: true,
         data: {
           balance: verification.balance ?? 0,
@@ -95,8 +99,11 @@ export async function checkBalance(id: string) {
     const apiData = (api.data as any) || {};
     const keyParam = apiData.key || "key";
 
+    // Decrypt the API key before using
+    const apiKey = decrypt(api.key);
+
     const response = await connectApi(api.url, {
-      [keyParam]: api.key,
+      [keyParam]: apiKey,
       action: "balance",
     });
 
@@ -136,9 +143,12 @@ export async function updateProvider(
     const apiData = (api.data as any) || {};
     if (commission !== undefined) apiData.commission = commission;
 
+    // Encrypt the new API key before storing
+    const encryptedKey = encrypt(key);
+
     await prisma.api.update({
       where: { id },
-      data: { key, data: apiData },
+      data: { key: encryptedKey, data: apiData },
     });
 
     return { success: true };

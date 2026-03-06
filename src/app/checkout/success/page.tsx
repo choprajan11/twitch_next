@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("order");
+  const orderId = searchParams.get("order") || searchParams.get("oid");
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center py-12 px-4">

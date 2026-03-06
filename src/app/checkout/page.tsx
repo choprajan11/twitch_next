@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Suspense } from "react";
 import TwitchUsernameInput from "@/components/TwitchUsernameInput";
+import { getSessionEmail } from "@/lib/sessionClient";
 
 function CheckoutForm() {
   const searchParams = useSearchParams();
@@ -16,8 +17,14 @@ function CheckoutForm() {
   const serviceName = searchParams.get("serviceName") || "Service";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSessionEmail(getSessionEmail());
+  }, []);
 
   const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
+  const isChatbotService = serviceSlug?.includes("chat") || serviceSlug?.includes("bot");
 
   if (!serviceSlug || !planId) {
     router.push("/");
@@ -35,6 +42,7 @@ function CheckoutForm() {
     const link = formData.get("link") as string;
     const email = formData.get("email") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
+    const comments = formData.get("comments") as string;
 
     try {
       const res = await fetch("/api/checkout", {
@@ -45,7 +53,8 @@ function CheckoutForm() {
           planId,
           link,
           email,
-          gateway: paymentMethod === "crypto" ? "crypto" : paymentMethod === "wallet" ? "wallet" : "stripe",
+          comments: comments || undefined,
+          paymentMethod: paymentMethod || "stripe",
         }),
       });
 
@@ -57,8 +66,8 @@ function CheckoutForm() {
         return;
       }
 
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+      if (data.url) {
+        window.location.href = data.url;
       }
     } catch {
       setError("Network error. Please try again.");
@@ -118,17 +127,42 @@ function CheckoutForm() {
                   ) : (
                     <TwitchUsernameInput />
                   )}
+
+                  {isChatbotService && (
+                    <div>
+                      <label htmlFor="comments" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                        Chat Messages <span className="text-zinc-400 font-normal">(optional)</span>
+                      </label>
+                      <textarea
+                        id="comments"
+                        name="comments"
+                        rows={4}
+                        placeholder={"Enter custom chat messages, one per line.\nLeave empty for default random messages."}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white resize-none"
+                      />
+                      <p className="text-xs font-medium text-zinc-500 mt-2">One message per line. Bots will rotate through these messages randomly.</p>
+                    </div>
+                  )}
+
                   <div>
                     <label htmlFor="email" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
                       Email Address (For Receipt &amp; Tracking)
                     </label>
+                    {sessionEmail && (
+                      <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Logged in as {sessionEmail}
+                      </p>
+                    )}
                     <input
                       type="email"
                       id="email"
                       name="email"
                       required
+                      defaultValue={sessionEmail || ""}
+                      readOnly={!!sessionEmail}
                       placeholder="you@example.com"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
+                      className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white ${sessionEmail ? "opacity-70 cursor-not-allowed" : ""}`}
                     />
                     <p className="text-xs font-medium text-zinc-500 mt-2">We&apos;ll create a dashboard for you to track your order.</p>
                   </div>

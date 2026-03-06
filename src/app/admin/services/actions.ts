@@ -20,6 +20,9 @@ export async function getAllServices() {
       active: service.status,
       plans: Array.isArray(service.plans) ? (service.plans as unknown[]).length : 0,
       sales: service._count.orders,
+      apiId: service.apiId,
+      apiServiceId: service.apiServiceId,
+      type: service.type,
     }));
   } catch (error) {
     console.error("Failed to fetch services:", error);
@@ -82,6 +85,9 @@ export async function updateService(serviceId: string, data: {
   name: string;
   category: string;
   slug?: string;
+  apiId?: string | null;
+  apiServiceId?: string | null;
+  type?: string | null;
 }) {
   try {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -105,6 +111,9 @@ export async function updateService(serviceId: string, data: {
         name: data.name,
         slug,
         categoryId: category.id,
+        apiId: data.apiId || null,
+        apiServiceId: data.apiServiceId || null,
+        type: data.type || null,
       },
     });
 
@@ -112,5 +121,19 @@ export async function updateService(serviceId: string, data: {
   } catch (error) {
     console.error("Failed to update service:", error);
     return { success: false, error: "Failed to update service" };
+  }
+}
+
+export async function getProviders() {
+  try {
+    const apis = await prisma.api.findMany({
+      where: { status: true },
+      select: { id: true, name: true, url: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return apis;
+  } catch (error) {
+    console.error("Failed to fetch providers:", error);
+    return [];
   }
 }

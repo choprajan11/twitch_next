@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { isDisposableEmail, rateLimit } from "@/lib/security";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { processOrderImmediately } from "@/lib/orderProcessor";
+import { processStripeRequest } from "@/lib/stripe";
 
 type Plan = {
   id: string;
   name: string;
   price: number;
-  quantity: number;
+  quantity?: number;
+  duration?: number;
   popular?: boolean;
 };
 
@@ -60,7 +55,7 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, paymentMethod } = body;
+    const { serviceSlug, planId, link, email, paymentMethod, comments } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
@@ -108,6 +103,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
 
+    const planValue = selectedPlan.quantity ?? selectedPlan.duration;
+    if (!planValue) {
+      return NextResponse.json(
+        { error: "Selected plan is not configured correctly" },
+        { status: 400 }
+      );
+    }
+
     let parsedLink: string;
     try {
       parsedLink = parseTwitchLink(link, service.type);
@@ -131,21 +134,6 @@ export async function POST(req: Request) {
       update: {},
     });
 
-    const duplicateOrder = await prisma.order.findFirst({
-      where: {
-        userId: user.id,
-        link: parsedLink,
-        serviceId: service.id,
-        status: { notIn: ["completed", "cancelled", "failed"] },
-      },
-    });
-    if (duplicateOrder) {
-      return NextResponse.json(
-        { error: "A similar order is already in process" },
-        { status: 409 }
-      );
-    }
-
     const price = Number(selectedPlan.price.toFixed(2));
     const oid = generateOid();
     const gateway =
@@ -164,12 +152,13 @@ export async function POST(req: Request) {
         status: "payment",
         link: parsedLink,
         price,
-        quantity: selectedPlan.quantity,
+        quantity: planValue,
         gateway,
         data: {
           mode: "web",
           service: service.name,
           plan: selectedPlan.name,
+          ...(comments ? { comments } : {}),
         },
       },
     });
@@ -220,39 +209,32 @@ export async function POST(req: Request) {
         }),
       ]);
 
+      const processed = await processOrderImmediately(order.id);
+      console.log(`Wallet order ${oid} processing result:`, processed);
+
       return NextResponse.json({
         url: `/checkout/success?order=${oid}`,
+        oid,
       });
     }
 
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${service.name} - ${selectedPlan.name}`,
-              description: `${selectedPlan.quantity} ${service.name} for ${parsedLink}`,
-            },
-            unit_amount: Math.round(price * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      client_reference_id: oid,
-      customer_email: emailClean,
-      metadata: {
-        orderId: order.id,
-        oid,
-        userId: user.id,
-      },
-      success_url: `${BASE_URL}/checkout/success?oid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/checkout/failed`,
+    const stripeResult = await processStripeRequest({
+      orderId: order.id,
+      oid,
+      email: emailClean,
+      amount: price,
+      serviceSlug: service.slug,
+      quantity: planValue,
     });
 
-    return NextResponse.json({ url: stripeSession.url });
+    if (!stripeResult) {
+      return NextResponse.json(
+        { error: "Payment processing failed. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ url: stripeResult.redirectUrl });
   } catch (error: any) {
     console.error("Checkout error:", error);
     return NextResponse.json(

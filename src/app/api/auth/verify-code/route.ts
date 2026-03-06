@@ -56,12 +56,19 @@ export async function POST(request: NextRequest) {
         message: "Logged in successfully",
       });
 
-      // Set cookie on the response
       response.cookies.set('session', sessionToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+      });
+
+      response.cookies.set('user_email', user.email, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
         path: '/',
       });
 

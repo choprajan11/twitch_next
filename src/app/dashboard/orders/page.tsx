@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { refreshUserOrderStatuses } from '@/lib/orderProcessor';
+import OrderStatusBadge from '@/components/dashboard/OrderStatusBadge';
 
 export const metadata = {
   title: 'My Orders - GrowTwitch',
@@ -18,6 +20,8 @@ export default async function DashboardOrdersPage() {
   if (user.role === 'admin') {
     redirect('/admin/orders');
   }
+
+  await refreshUserOrderStatuses(user.id).catch(() => {});
 
   const orders = await prisma.order.findMany({
     where: { userId: user.id },
@@ -81,18 +85,16 @@ export default async function DashboardOrdersPage() {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        order.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
-                        order.status === 'processing' || order.status === 'inprogress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' :
-                        order.status === 'pending' || order.status === 'payment' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' :
-                        order.status === 'cancelled' || order.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
-                        'bg-zinc-100 text-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400'
-                      }`}>
-                        {(order.status === 'processing' || order.status === 'inprogress') && (
-                          <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></span>
-                        )}
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
+                      <OrderStatusBadge
+                        status={order.status}
+                        orderId={order.id}
+                        oid={order.oid || order.id}
+                        price={order.price}
+                        serviceName={order.service.name}
+                        serviceSlug={order.service.slug}
+                        quantity={order.quantity}
+                        link={order.link}
+                      />
                     </td>
                     <td className="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                       ${order.price.toFixed(2)}

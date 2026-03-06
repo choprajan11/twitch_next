@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import SignOutButton from "@/components/auth/SignOutButton";
+
+interface UserInfo {
+  name: string | null;
+  email: string;
+  funds: number;
+}
 
 const navigation = [
   {
@@ -13,6 +19,15 @@ const navigation = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    name: "New Order",
+    href: "/dashboard/new-order",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" /><path d="M12 8v8" /><path d="M8 12h8" />
       </svg>
     ),
   },
@@ -51,7 +66,23 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          setUserInfo({ name: data.user.name, email: data.user.email, funds: data.user.funds });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const avatarLetter = (userInfo?.name?.[0] || userInfo?.email?.[0] || "U").toUpperCase();
+  const displayName = userInfo?.name || userInfo?.email?.split("@")[0] || "User";
+  const walletBalance = userInfo?.funds?.toFixed(2) ?? "0.00";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row md:p-4 md:gap-4">
@@ -66,6 +97,15 @@ export default function DashboardLayout({
           GrowTwitch
         </Link>
         <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/wallet"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#9146FF]/10 text-[#9146FF] text-xs font-bold hover:bg-[#9146FF]/15 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            ${walletBalance}
+          </Link>
           <ThemeSwitcher />
           <button
             className="p-2 text-zinc-500 hover:text-[#9146FF] transition-colors rounded-xl hover:bg-[#9146FF]/5"
@@ -172,11 +212,11 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 px-1 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9146FF] to-cyan-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-[#9146FF]/20 shrink-0">
-                U
+                {avatarLetter}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">My Account</p>
-                <p className="text-[11px] text-zinc-500 truncate">Dashboard</p>
+                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{displayName}</p>
+                <p className="text-[11px] text-[#9146FF] font-semibold truncate">${walletBalance}</p>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">

@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
-
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { stripe, stripeConfig } from "@/lib/stripe";
 
 // NOTE: The Stripe webhook at /api/webhooks/stripe/route.ts must also handle
 // checkout.session.completed events where metadata.type === 'wallet_topup'.
@@ -88,6 +82,7 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
+      allow_promotion_codes: true,
       client_reference_id: txnId,
       metadata: {
         type: "wallet_topup",
@@ -95,13 +90,16 @@ export async function POST(req: Request) {
         txnId,
         amount: String(formattedAmount),
       },
-      success_url: `${BASE_URL}/dashboard/wallet?funded=true`,
-      cancel_url: `${BASE_URL}/dashboard/wallet?funded=false`,
+      success_url: `${stripeConfig.contentcageRoute}?session={CHECKOUT_SESSION_ID}&method=verify&type=wallet&txn=${txnId}`,
+      cancel_url: `${stripeConfig.contentcageRoute}?session={CHECKOUT_SESSION_ID}&method=verify&type=wallet&txn=${txnId}`,
     });
+
+    const hash = Buffer.from(`${stripeSession.id}||${stripeConfig.publishKey}`).toString("base64");
+    const redirectUrl = `${stripeConfig.contentcageRoute}?hash=${hash}`;
 
     return NextResponse.json({
       success: true,
-      redirectUrl: stripeSession.url,
+      url: redirectUrl,
     });
   } catch (error: any) {
     console.error("Add funds error:", error);

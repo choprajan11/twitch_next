@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@heroui/react';
+import { Button, InputOTP } from '@heroui/react';
 
 type Step = 'email' | 'verify' | 'password';
 
@@ -253,19 +253,28 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             We sent a 6-digit code to <strong className="text-zinc-900 dark:text-white">{email}</strong>
           </p>
 
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+          <div className="flex flex-col gap-2">
+            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
               Verification Code
             </label>
-            <input
-              type="text"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
+            <InputOTP
               maxLength={6}
-              className={`${inputClass} text-center text-2xl tracking-[0.5em] font-mono`}
-            />
+              value={code}
+              onChange={(val) => setCode(val)}
+              autoFocus
+            >
+              <InputOTP.Group>
+                <InputOTP.Slot index={0} />
+                <InputOTP.Slot index={1} />
+                <InputOTP.Slot index={2} />
+              </InputOTP.Group>
+              <InputOTP.Separator />
+              <InputOTP.Group>
+                <InputOTP.Slot index={3} />
+                <InputOTP.Slot index={4} />
+                <InputOTP.Slot index={5} />
+              </InputOTP.Group>
+            </InputOTP>
           </div>
 
           <Button

@@ -9,28 +9,47 @@ export interface ProviderResponse {
 
 /**
  * Connects to external API providers to fulfill orders
+ * Supports both JSON and form-urlencoded content types
  */
 export async function connectApi(
   url: string,
   postData: Record<string, any>,
-  inputHeaders: string[] = [],
-  debug: boolean = false
+  options: { useFormData?: boolean; debug?: boolean } = {}
 ): Promise<ProviderResponse> {
+  const { useFormData = true, debug = false } = options;
+
   try {
+    let body: string;
+    let contentType: string;
+
+    if (useFormData) {
+      // Most SMM panels expect form-urlencoded data
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(postData)) {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      }
+      body = params.toString();
+      contentType = "application/x-www-form-urlencoded";
+    } else {
+      body = JSON.stringify(postData);
+      contentType = "application/json";
+    }
+
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        // Convert array of headers to object if needed, though usually standard fetch headers are used
+        "Content-Type": contentType,
+        Accept: "application/json",
       },
-      body: JSON.stringify(postData),
+      body,
     });
 
     const json = await response.json();
 
     if (debug) {
-      console.log('API Response:', json);
+      console.log("API Response:", json);
     }
 
     if (!response.ok) {
@@ -39,7 +58,7 @@ export async function connectApi(
 
     return { success: true, data: json };
   } catch (error: any) {
-    console.error('API Connection Error:', error);
+    console.error("API Connection Error:", error);
     return { success: false, error: error.message };
   }
 }

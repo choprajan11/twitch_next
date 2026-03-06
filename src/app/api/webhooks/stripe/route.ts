@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { processOrderImmediately } from "@/lib/orderProcessor";
+import { stripe, stripeConfig } from "@/lib/stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const endpointSecret = stripeConfig.webhookSecret;
 
 export async function POST(req: Request) {
   const payload = await req.text();
@@ -72,8 +70,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       }
 
-      // Order payment flow
-      const oid = session.client_reference_id;
+      // Order payment flow - check both metadata.oid and client_reference_id for backwards compatibility
+      const oid = session.metadata?.oid || session.client_reference_id;
       if (oid) {
         const order = await prisma.order.findUnique({ where: { oid } });
 
@@ -85,6 +83,9 @@ export async function POST(req: Request) {
               txnId: session.payment_intent as string,
             },
           });
+
+          const processed = await processOrderImmediately(order.id);
+          console.log(`Stripe order ${oid} processing result:`, processed);
         }
       }
     } catch (error) {

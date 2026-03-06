@@ -28,47 +28,15 @@ export default function DashboardSettingsPage() {
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/wallet")
+    fetch("/api/user/profile")
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) {
-          // Wallet route gives us balance; we need more user data
-          // Fetch from a simple endpoint or use what we have
+        if (data.success && data.user) {
+          setUser(data.user);
+          setName(data.user.name || "");
         }
-      });
-
-    // Get user profile data from cookie/session
-    fetch("/api/user/profile", { method: "GET" })
-      .then((r) => {
-        if (r.status === 405) {
-          // GET not implemented, that's okay
-          return null;
-        }
-        return r.json();
       })
-      .catch(() => null);
-  }, []);
-
-  useEffect(() => {
-    // Get basic info from cookie session
-    const sessionCookie = document.cookie
-      .split(";")
-      .find((c) => c.trim().startsWith("session="));
-    if (sessionCookie) {
-      try {
-        const value = sessionCookie.split("=")[1];
-        const decoded = JSON.parse(atob(value));
-        setUser({
-          name: null,
-          email: decoded.email || "",
-          funds: 0,
-          role: decoded.role || "user",
-          createdAt: new Date().toISOString(),
-        });
-      } catch {
-        // ignore
-      }
-    }
+      .catch(() => {});
   }, []);
 
   async function handleSaveProfile() {

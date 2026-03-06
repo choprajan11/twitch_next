@@ -32,7 +32,7 @@ export default function TwitchUsernameInput({
   const [notFound, setNotFound] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const inputClass = className || "w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white";
+  const inputClass = className || "w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm";
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
