@@ -42,8 +42,8 @@ const testimonials = [
 const steps = [
   {
     step: "01",
-    title: "Choose Service",
-    desc: "Select the service that fits your growth goals",
+    title: "Choose Your Service",
+    desc: "Pick a service and enter your Twitch username",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
@@ -54,17 +54,6 @@ const steps = [
   },
   {
     step: "02",
-    title: "Enter Details",
-    desc: "Provide your Twitch username and quantity",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </svg>
-    )
-  },
-  {
-    step: "03",
     title: "Secure Payment",
     desc: "Pay safely with Stripe or cryptocurrency",
     icon: (
@@ -75,7 +64,7 @@ const steps = [
     )
   },
   {
-    step: "04",
+    step: "03",
     title: "Watch It Grow",
     desc: "See results within minutes of purchase",
     icon: (
@@ -212,7 +201,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="bento-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <div className="bento-grid grid-cols-1 md:grid-cols-3">
           {steps.map((item, index) => (
             <div key={index} className="bento-card p-6 lg:p-8 relative group">
               <div className="absolute top-4 right-4 text-6xl font-black text-zinc-100 dark:text-zinc-800 group-hover:text-[#9146FF]/20 transition-colors">

@@ -37,12 +37,20 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  const isHomepage = request.nextUrl.pathname === '/';
 
   if ((isAdminRoute || isDashboardRoute) && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   if (isAuthRoute && session) {
+    const target = session.role === 'admin' ? '/admin' : '/dashboard';
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
+  // Redirect logged-in users from homepage to dashboard,
+  // unless they explicitly clicked the logo/home link (indicated by ?home=true)
+  if (isHomepage && session && !request.nextUrl.searchParams.has('home')) {
     const target = session.role === 'admin' ? '/admin' : '/dashboard';
     return NextResponse.redirect(new URL(target, request.url));
   }
