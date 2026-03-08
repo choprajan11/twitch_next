@@ -117,8 +117,8 @@ export function Navbar() {
       {/* Mobile menu panel */}
       <div
         ref={menuRef}
-        className={`fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-zinc-900 shadow-2xl transform transition-transform duration-300 ease-in-out md:hidden ${
-          mobileOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-zinc-900 shadow-2xl transform transition-all duration-300 ease-in-out md:hidden ${
+          mobileOpen ? "translate-x-0 visible" : "translate-x-full invisible"
         }`}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">

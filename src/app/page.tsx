@@ -78,9 +78,9 @@ const steps = [
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center overflow-x-hidden">
       {/* Hero Section - Full-Width with Floating Elements */}
-      <section className="w-full max-w-7xl mx-auto px-4 pt-12 pb-20 lg:pt-24 lg:pb-36 relative">
+      <section className="w-full max-w-7xl mx-auto px-4 pt-12 pb-20 lg:pt-24 lg:pb-36 relative overflow-hidden">
         
         {/* Animated Floating Elements */}
         <HeroFloatingElements />
@@ -272,7 +272,7 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="w-full max-w-7xl mx-auto px-4 py-16 lg:py-24">
-        <div className="bento-card p-8 lg:p-16 text-center relative overflow-hidden">
+        <div className="bento-card p-6 sm:p-8 lg:p-16 text-center relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#9146FF]/10 via-transparent to-cyan-500/10"></div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#9146FF]/20 rounded-full blur-3xl"></div>
