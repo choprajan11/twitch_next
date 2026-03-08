@@ -12,16 +12,42 @@ function CheckoutForm() {
   const router = useRouter();
   const serviceSlug = searchParams.get("service");
   const planId = searchParams.get("plan");
-  const planName = searchParams.get("planName") || "Selected Plan";
-  const planPrice = searchParams.get("price") || "0.00";
-  const serviceName = searchParams.get("serviceName") || "Service";
+  const [resolvedServiceName, setResolvedServiceName] = useState(searchParams.get("serviceName") || "");
+  const [resolvedPlanName, setResolvedPlanName] = useState(searchParams.get("planName") || "");
+  const [resolvedPrice, setResolvedPrice] = useState(searchParams.get("price") || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!searchParams.get("price"));
 
   useEffect(() => {
     setSessionEmail(getSessionEmail());
   }, []);
+
+  // Fetch service details if query params are missing
+  useEffect(() => {
+    if (resolvedPrice && resolvedServiceName && resolvedPlanName) {
+      setIsLoading(false);
+      return;
+    }
+    if (!serviceSlug || !planId) return;
+
+    fetch(`/api/services/${serviceSlug}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.name) setResolvedServiceName(data.name);
+        if (data.plans) {
+          const plans = typeof data.plans === "string" ? JSON.parse(data.plans) : data.plans;
+          const plan = plans.find((p: { id: string }) => p.id === planId);
+          if (plan) {
+            setResolvedPlanName(plan.name);
+            setResolvedPrice(String(plan.price));
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [serviceSlug, planId, resolvedPrice, resolvedServiceName, resolvedPlanName]);
 
   const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
   const isChatbotService = serviceSlug?.includes("chat") || serviceSlug?.includes("bot");
@@ -31,7 +57,9 @@ function CheckoutForm() {
     return null;
   }
 
-  const securePrice = Number(planPrice).toFixed(2);
+  const serviceName = resolvedServiceName || "Service";
+  const planName = resolvedPlanName || "Selected Plan";
+  const securePrice = Number(resolvedPrice || "0").toFixed(2);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -218,16 +246,28 @@ function CheckoutForm() {
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-zinc-500 font-medium">Service</span>
-                    <span className="font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">{serviceName}</span>
+                    {isLoading ? (
+                      <span className="w-24 h-7 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                    ) : (
+                      <span className="font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">{serviceName}</span>
+                    )}
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-zinc-500 font-medium">Package</span>
-                    <span className="font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">{planName}</span>
+                    {isLoading ? (
+                      <span className="w-20 h-7 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                    ) : (
+                      <span className="font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">{planName}</span>
+                    )}
                   </div>
                   <div className="border-t border-[rgba(145,70,255,0.08)] pt-6 mt-6">
                     <div className="flex justify-between items-end mb-6">
                       <span className="font-bold text-zinc-900 dark:text-white text-lg">Total</span>
-                      <span className="text-4xl font-black text-[#9146FF]">${securePrice}</span>
+                      {isLoading ? (
+                        <span className="w-28 h-10 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                      ) : (
+                        <span className="text-4xl font-black text-[#9146FF]">${securePrice}</span>
+                      )}
                     </div>
                     <Button
                       type="submit"
