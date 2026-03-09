@@ -12,29 +12,30 @@ function CheckoutForm() {
   const router = useRouter();
   const serviceSlug = searchParams.get("service");
   const planId = searchParams.get("plan");
-  const [resolvedServiceName, setResolvedServiceName] = useState(searchParams.get("serviceName") || "");
-  const [resolvedPlanName, setResolvedPlanName] = useState(searchParams.get("planName") || "");
-  const [resolvedPrice, setResolvedPrice] = useState(searchParams.get("price") || "");
+  const [resolvedServiceName, setResolvedServiceName] = useState("");
+  const [resolvedPlanName, setResolvedPlanName] = useState("");
+  const [resolvedPrice, setResolvedPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(!searchParams.get("price"));
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setSessionEmail(getSessionEmail());
   }, []);
 
-  // Fetch service details if query params are missing
+  // Always load service details (name, plan name, price) from backend — URL only has variant
   useEffect(() => {
-    if (resolvedPrice && resolvedServiceName && resolvedPlanName) {
-      setIsLoading(false);
-      return;
-    }
     if (!serviceSlug || !planId) return;
 
+    setIsLoading(true);
     fetch(`/api/services/${serviceSlug}`)
       .then((r) => r.json())
       .then((data) => {
+        if (data.error) {
+          setError("Service not found");
+          return;
+        }
         if (data.name) setResolvedServiceName(data.name);
         if (data.plans) {
           const plans = typeof data.plans === "string" ? JSON.parse(data.plans) : data.plans;
@@ -42,12 +43,14 @@ function CheckoutForm() {
           if (plan) {
             setResolvedPlanName(plan.name);
             setResolvedPrice(String(plan.price));
+          } else {
+            setError("Plan not found");
           }
         }
       })
-      .catch(() => {})
+      .catch(() => setError("Failed to load service details"))
       .finally(() => setIsLoading(false));
-  }, [serviceSlug, planId, resolvedPrice, resolvedServiceName, resolvedPlanName]);
+  }, [serviceSlug, planId]);
 
   const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
   const isChatbotService = serviceSlug?.includes("chat") || serviceSlug?.includes("bot");
@@ -60,6 +63,7 @@ function CheckoutForm() {
   const serviceName = resolvedServiceName || "Service";
   const planName = resolvedPlanName || "Selected Plan";
   const securePrice = Number(resolvedPrice || "0").toFixed(2);
+  const canSubmit = !isLoading && resolvedPrice && !error;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -271,7 +275,7 @@ function CheckoutForm() {
                     </div>
                     <Button
                       type="submit"
-                      isDisabled={isSubmitting}
+                      isDisabled={isSubmitting || !canSubmit}
                       className="w-full h-14 bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold text-lg shadow-lg shadow-[#9146FF]/30 transition-transform active:scale-95 glow-animation rounded-xl"
                     >
                       {isSubmitting ? "Processing..." : "Pay Securely"}

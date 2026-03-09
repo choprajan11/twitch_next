@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { isDisposableEmail, rateLimit } from "@/lib/security";
@@ -178,26 +179,23 @@ export async function POST(req: Request) {
         );
       }
 
-      const freshUser = await prisma.user.findUnique({
-        where: { id: user.id },
-      });
-      if (!freshUser || freshUser.funds < price) {
-        return NextResponse.json(
-          { error: "Insufficient funds in wallet" },
-          { status: 400 }
-        );
-      }
-
-      await prisma.$transaction([
-        prisma.user.update({
+      const walletResult = await prisma.$transaction(async (tx) => {
+        const freshUser = await tx.user.findUnique({
           where: { id: user.id },
+        });
+        if (!freshUser || freshUser.funds < price) {
+          return { success: false as const };
+        }
+
+        await tx.user.update({
+          where: { id: user.id, funds: { gte: price } },
           data: { funds: { decrement: price } },
-        }),
-        prisma.order.update({
+        });
+        await tx.order.update({
           where: { id: order.id },
-          data: { status: "pending", txnId: `WAL${Date.now()}` },
-        }),
-        prisma.fundLog.create({
+          data: { status: "pending", txnId: `WAL-${crypto.randomUUID()}` },
+        });
+        await tx.fundLog.create({
           data: {
             userId: user.id,
             type: "deduct",
@@ -206,8 +204,17 @@ export async function POST(req: Request) {
             newFunds: freshUser.funds - price,
             note: `Order ${oid} - ${service.name}`,
           },
-        }),
-      ]);
+        });
+
+        return { success: true as const };
+      });
+
+      if (!walletResult.success) {
+        return NextResponse.json(
+          { error: "Insufficient funds in wallet" },
+          { status: 400 }
+        );
+      }
 
       const processed = await processOrderImmediately(order.id);
       console.log(`Wallet order ${oid} processing result:`, processed);

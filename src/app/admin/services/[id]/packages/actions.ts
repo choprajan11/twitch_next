@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 
 interface Plan {
   name: string;
@@ -10,6 +11,7 @@ interface Plan {
 }
 
 export async function getServiceWithPlans(serviceId: string) {
+  await requireAdmin();
   try {
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
@@ -36,6 +38,7 @@ export async function getServiceWithPlans(serviceId: string) {
 }
 
 export async function updateServicePlans(serviceId: string, plans: Plan[]) {
+  await requireAdmin();
   try {
     await prisma.service.update({
       where: { id: serviceId },

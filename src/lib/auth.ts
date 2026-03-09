@@ -1,11 +1,46 @@
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
+import jwt from "jsonwebtoken";
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET or ENCRYPTION_SECRET environment variable is required");
+  }
+  return secret;
+}
 
 export interface SessionUser {
   userId: string;
   email: string;
   role?: string;
   exp: number;
+}
+
+export function createSessionToken(user: {
+  id: string;
+  email: string;
+  role: string;
+}): string {
+  return jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    getJwtSecret(),
+    { expiresIn: "7d" }
+  );
+}
+
+export function verifySessionToken(token: string): SessionUser | null {
+  try {
+    const decoded = jwt.verify(token, getJwtSecret()) as jwt.JwtPayload;
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      exp: (decoded.exp ?? 0) * 1000,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -17,11 +52,11 @@ export async function getSession(): Promise<SessionUser | null> {
       return null;
     }
 
-    const session = JSON.parse(
-      Buffer.from(sessionCookie.value, "base64").toString()
-    ) as SessionUser;
+    const session = verifySessionToken(sessionCookie.value);
+    if (!session) {
+      return null;
+    }
 
-    // Check if session is expired
     if (session.exp < Date.now()) {
       return null;
     }

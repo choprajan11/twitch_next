@@ -1,5 +1,5 @@
 const TWITCH_GQL_URL = "https://gql.twitch.tv/gql";
-const TWITCH_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+const TWITCH_CLIENT_ID = process.env.TWITCH_GQL_CLIENT_ID || "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 export interface TwitchClipData {
   title: string;
@@ -12,8 +12,8 @@ export interface TwitchClipData {
 export async function fetchTwitchClipData(
   clipSlug: string
 ): Promise<TwitchClipData | null> {
-  const query = `query {
-    clip(slug: "${clipSlug}") {
+  const query = `query GetClip($slug: String!) {
+    clip(slug: $slug) {
       title
       broadcaster {
         displayName
@@ -29,7 +29,7 @@ export async function fetchTwitchClipData(
         "Client-ID": TWITCH_CLIENT_ID,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, variables: { slug: clipSlug } }),
     });
 
     if (!response.ok) {

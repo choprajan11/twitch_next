@@ -16,7 +16,6 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
   const [email, setEmail] = useState(initialEmail || '');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(initialStep === 'verify' ? `Verification code sent to ${initialEmail}` : null);
@@ -45,12 +44,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
         throw new Error(data.error || 'Failed to send code');
       }
 
-      setIsNewUser(data.isNewUser);
-      if (data.devCode) {
-        setMessage(`[DEV MODE] Your code is: ${data.devCode}`);
-      } else {
-        setMessage(`Verification code sent to ${email}`);
-      }
+      setMessage(`Verification code sent to ${email}`);
       setStep('verify');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
@@ -78,7 +72,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
         throw new Error(data.error || 'Invalid code');
       }
 
-      if (isNewUser || data.needsPassword) {
+      if (data.needsPassword) {
         setMessage('Code verified! Please set your password.');
         setStep('password');
       } else {
@@ -303,7 +297,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
       {step === 'password' && (
         <form onSubmit={handlePasswordSubmit} className="space-y-5">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {isNewUser ? 'Create a password to secure your account' : 'Set a new password for your account'}
+            Set a password to secure your account
           </p>
 
           <div>
@@ -328,7 +322,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
             style={{ backgroundColor: '#9146FF', color: 'white' }}
             isDisabled={isLoading}
           >
-            {isNewUser ? 'Create Account' : 'Update Password'}
+            Set Password
           </Button>
         </form>
       )}

@@ -1,8 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 
 export async function getBannedUsers() {
+  await requireAdmin();
   try {
     return await prisma.banList.findMany({
       orderBy: { createdAt: "desc" },
@@ -14,6 +16,7 @@ export async function getBannedUsers() {
 }
 
 export async function addBannedUser(username: string) {
+  await requireAdmin();
   try {
     const cleaned = username.toLowerCase().trim().replace(/\s/g, "");
     if (!cleaned) return { success: false, error: "Username is required" };
@@ -32,6 +35,7 @@ export async function addBannedUser(username: string) {
 }
 
 export async function removeBannedUser(id: string) {
+  await requireAdmin();
   try {
     await prisma.banList.delete({ where: { id } });
     return { success: true };

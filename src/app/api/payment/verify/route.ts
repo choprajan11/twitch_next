@@ -15,41 +15,50 @@ export async function GET(req: Request) {
     try {
       const response = await verifyStripeSession(sessionId);
 
-      // Handle wallet top-up
       if (type === "wallet") {
         const txnId = url.searchParams.get("txn");
         if (response.status && txnId) {
-          const transaction = await prisma.transaction.findUnique({
-            where: { txnId },
+          // Validate that the Stripe session metadata matches the requested txnId
+          if (response.metadata?.txnId && response.metadata.txnId !== txnId) {
+            console.error(`Payment metadata mismatch: expected ${txnId}, got ${response.metadata.txnId}`);
+            return NextResponse.redirect(`${BASE_URL}/dashboard/wallet?funded=false`);
+          }
+
+          // Atomic conditional update: only update if status is still "pending"
+          const updated = await prisma.transaction.updateMany({
+            where: { txnId, status: "pending" },
+            data: {
+              status: "complete",
+              gatewayTxn: response.txnId,
+            },
           });
 
-          if (transaction && transaction.status === "pending") {
-            const user = await prisma.user.findUnique({
-              where: { id: transaction.userId },
+          if (updated.count > 0) {
+            const transaction = await prisma.transaction.findUnique({
+              where: { txnId },
             });
 
-            if (user) {
+            if (transaction) {
+              // Validate userId matches Stripe metadata if available
+              if (response.metadata?.userId && response.metadata.userId !== transaction.userId) {
+                console.error(`User mismatch for txn ${txnId}`);
+                return NextResponse.redirect(`${BASE_URL}/dashboard/wallet?funded=false`);
+              }
+
               const amount = response.amount || transaction.amount;
+
               await prisma.$transaction([
                 prisma.user.update({
                   where: { id: transaction.userId },
                   data: { funds: { increment: amount } },
-                }),
-                prisma.transaction.update({
-                  where: { txnId },
-                  data: {
-                    status: "complete",
-                    oldFunds: user.funds,
-                    gatewayTxn: response.txnId,
-                  },
                 }),
                 prisma.fundLog.create({
                   data: {
                     userId: transaction.userId,
                     type: "add",
                     amount,
-                    oldFunds: user.funds,
-                    newFunds: user.funds + amount,
+                    oldFunds: 0,
+                    newFunds: 0,
                     note: "Wallet top-up via Stripe",
                   },
                 }),
@@ -63,31 +72,35 @@ export async function GET(req: Request) {
         return NextResponse.redirect(`${BASE_URL}/dashboard/wallet?funded=false`);
       }
 
-      // Handle order payment
       if (response.status && response.oid) {
-        const order = await prisma.order.findUnique({
-          where: { oid: response.oid },
+        // Atomic: only update if status is still "payment"
+        const updated = await prisma.order.updateMany({
+          where: { oid: response.oid, status: "payment", txnId: null },
+          data: {
+            status: "pending",
+            txnId: response.txnId,
+            price: response.amount,
+          },
         });
 
-        if (order && order.status === "payment" && !order.txnId) {
-          await prisma.order.update({
+        if (updated.count > 0) {
+          const order = await prisma.order.findUnique({
             where: { oid: response.oid },
-            data: {
-              status: "pending",
-              txnId: response.txnId,
-              price: response.amount || order.price,
-            },
           });
-
-          const processed = await processOrderImmediately(order.id);
-          console.log(`Stripe order ${response.oid} verified and processed:`, processed);
+          if (order) {
+            const processed = await processOrderImmediately(order.id);
+            console.log(`Stripe order ${response.oid} verified and processed:`, processed);
+          }
 
           return NextResponse.redirect(
             `${BASE_URL}/checkout/success?order=${response.oid}`
           );
         }
 
-        if (order && order.status !== "payment") {
+        const existingOrder = await prisma.order.findUnique({
+          where: { oid: response.oid },
+        });
+        if (existingOrder && existingOrder.status !== "payment") {
           return NextResponse.redirect(
             `${BASE_URL}/checkout/success?order=${response.oid}`
           );

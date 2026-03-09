@@ -1,8 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 
 export async function getAllServices() {
+  await requireAdmin();
   try {
     const services = await prisma.service.findMany({
       orderBy: { createdAt: "desc" },
@@ -31,6 +33,7 @@ export async function getAllServices() {
 }
 
 export async function toggleServiceStatus(serviceId: string) {
+  await requireAdmin();
   try {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) return { success: false, error: "Service not found" };
@@ -52,6 +55,7 @@ export async function createService(data: {
   category: string;
   active: boolean;
 }) {
+  await requireAdmin();
   try {
     let category = await prisma.category.findFirst({
       where: { name: data.category },
@@ -89,6 +93,7 @@ export async function updateService(serviceId: string, data: {
   apiServiceId?: string | null;
   type?: string | null;
 }) {
+  await requireAdmin();
   try {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) return { success: false, error: "Service not found" };
@@ -125,6 +130,7 @@ export async function updateService(serviceId: string, data: {
 }
 
 export async function getProviders() {
+  await requireAdmin();
   try {
     const apis = await prisma.api.findMany({
       where: { status: true },

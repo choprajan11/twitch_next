@@ -40,6 +40,7 @@ interface VerifyResponse {
   txnId?: string;
   amount?: number;
   errorMessage?: string;
+  metadata?: Record<string, string>;
 }
 
 export async function processStripeRequest(data: ProcessRequestData): Promise<{
@@ -124,6 +125,7 @@ export async function verifyStripeSession(sessionId: string): Promise<VerifyResp
       oid: oid ?? undefined,
       txnId: txnId ?? undefined,
       amount,
+      metadata: (session.metadata as Record<string, string>) ?? undefined,
     };
   } catch (error: any) {
     console.error("Stripe verifyData error:", error);

@@ -96,10 +96,14 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on route change (link click)
-  const closeMenu = () => setMobileOpen(false);
+  // Ensure menu is closed on mount (e.g. after reload or hydration)
+  useEffect(() => {
+    setMobileOpen(false);
+  }, []);
 
-  // Close menu when clicking outside
+  const closeMenu = useCallback(() => setMobileOpen(false), []);
+
+  // Close menu when clicking outside (backdrop or anywhere outside menuRef)
   useEffect(() => {
     if (!mobileOpen) return;
     function handleClick(e: MouseEvent) {
@@ -195,18 +199,19 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu overlay */}
+      {/* Mobile menu overlay + panel: only mount when open so reload never shows it */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden" aria-hidden="true" />
-      )}
-
-      {/* Mobile menu panel */}
-      <div
-        ref={menuRef}
-        className={`fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-zinc-900 shadow-2xl transform transition-all duration-300 ease-in-out md:hidden ${
-          mobileOpen ? "translate-x-0 visible" : "translate-x-full invisible"
-        }`}
-      >
+        <>
+          <button
+            type="button"
+            onClick={closeMenu}
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+            aria-label="Close menu"
+          />
+          <div
+            ref={menuRef}
+            className="fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-zinc-900 shadow-2xl md:hidden"
+          >
         <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-200 dark:border-zinc-800">
           <span className="text-lg font-bold text-zinc-900 dark:text-white">Menu</span>
           <button
@@ -276,7 +281,9 @@ export function Navbar() {
             <NavbarAuthButton />
           </div>
         </div>
-      </div>
+          </div>
+        </>
+      )}
     </nav>
   );
 }

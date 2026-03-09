@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { rateLimit } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() || "unknown";
     const { allowed } = rateLimit(`reset-pw:${ip}`, 5, 60_000);
     if (!allowed) {
       return NextResponse.json(
@@ -23,9 +24,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: "Password must be at least 8 characters" },
         { status: 400 }
       );
     }
@@ -35,7 +36,23 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     });
 
-    if (!user || user.vcode !== code) {
+    if (!user || !user.vcode) {
+      return NextResponse.json(
+        { error: "Invalid or expired reset code" },
+        { status: 400 }
+      );
+    }
+
+    if (user.vcodeExpiresAt && user.vcodeExpiresAt < new Date()) {
+      return NextResponse.json(
+        { error: "Reset code has expired. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
+    const codeA = Buffer.from(String(user.vcode));
+    const codeB = Buffer.from(String(code));
+    if (codeA.length !== codeB.length || !crypto.timingSafeEqual(codeA, codeB)) {
       return NextResponse.json(
         { error: "Invalid or expired reset code" },
         { status: 400 }
@@ -49,6 +66,7 @@ export async function POST(request: NextRequest) {
       data: {
         password: hashedPassword,
         vcode: null,
+        vcodeExpiresAt: null,
       },
     });
 

@@ -1,10 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 import { verifyApi, connectApi } from "@/lib/providers";
 import { encrypt, decrypt } from "@/lib/encryption";
 
 export async function getProviders() {
+  await requireAdmin();
   try {
     const apis = await prisma.api.findMany({
       where: { status: true },
@@ -28,9 +30,35 @@ export async function getProviders() {
   }
 }
 
+function validateProviderUrl(rawUrl: string): { valid: boolean; error?: string } {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "https:") {
+      return { valid: false, error: "Only HTTPS URLs are allowed" };
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    const blocked = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]",
+      "metadata.google.internal", "169.254.169.254"];
+    if (blocked.includes(hostname) || hostname.endsWith(".local") ||
+        hostname.endsWith(".internal") || /^10\./.test(hostname) ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(hostname) || /^192\.168\./.test(hostname)) {
+      return { valid: false, error: "Internal/private URLs are not allowed" };
+    }
+    return { valid: true };
+  } catch {
+    return { valid: false, error: "Invalid URL format" };
+  }
+}
+
 export async function addProvider(url: string, key: string) {
+  await requireAdmin();
   try {
     const trimmedUrl = url.replace(/\s/g, "").trim();
+
+    const urlCheck = validateProviderUrl(trimmedUrl);
+    if (!urlCheck.valid) {
+      return { success: false, error: urlCheck.error };
+    }
 
     const exists = await prisma.api.findFirst({
       where: { url: trimmedUrl, status: true },
@@ -73,6 +101,7 @@ export async function addProvider(url: string, key: string) {
 }
 
 export async function deleteProvider(id: string) {
+  await requireAdmin();
   try {
     await prisma.service.updateMany({
       where: { apiId: id },
@@ -92,6 +121,7 @@ export async function deleteProvider(id: string) {
 }
 
 export async function checkBalance(id: string) {
+  await requireAdmin();
   try {
     const api = await prisma.api.findUnique({ where: { id } });
     if (!api) return { success: false, error: "Provider not found" };
@@ -136,6 +166,7 @@ export async function updateProvider(
   key: string,
   commission?: number
 ) {
+  await requireAdmin();
   try {
     const api = await prisma.api.findUnique({ where: { id } });
     if (!api) return { success: false, error: "Provider not found" };

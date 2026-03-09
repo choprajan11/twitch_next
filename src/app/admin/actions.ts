@@ -2,8 +2,10 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
 
 export async function getAdminStats() {
+  await requireAdmin();
   try {
     const totalRevenue = await prisma.order.aggregate({
       _sum: { price: true },
@@ -45,6 +47,7 @@ export async function getAdminStats() {
 }
 
 export async function getRecentOrders(limit = 10) {
+  await requireAdmin();
   try {
     const orders = await prisma.order.findMany({
       take: limit,
@@ -72,6 +75,7 @@ export async function getRecentOrders(limit = 10) {
 }
 
 export async function getAllOrders(page = 1, limit = 20) {
+  await requireAdmin();
   try {
     const skip = (page - 1) * limit;
     
@@ -109,6 +113,7 @@ export async function getAllOrders(page = 1, limit = 20) {
 }
 
 export async function getAllUsers(page = 1, limit = 20) {
+  await requireAdmin();
   try {
     const skip = (page - 1) * limit;
     
@@ -143,6 +148,7 @@ export async function getAllUsers(page = 1, limit = 20) {
 }
 
 export async function toggleUserStatus(userId: string) {
+  await requireAdmin();
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { success: false, error: "User not found" };
@@ -160,6 +166,7 @@ export async function toggleUserStatus(userId: string) {
 }
 
 export async function getAllServices() {
+  await requireAdmin();
   try {
     const services = await prisma.service.findMany({
       orderBy: { createdAt: "desc" },
@@ -185,6 +192,7 @@ export async function getAllServices() {
 }
 
 export async function toggleServiceStatus(serviceId: string) {
+  await requireAdmin();
   try {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) return { success: false, error: "Service not found" };
@@ -202,6 +210,7 @@ export async function toggleServiceStatus(serviceId: string) {
 }
 
 export async function getCustomers(page = 1, limit = 20) {
+  await requireAdmin();
   try {
     const skip = (page - 1) * limit;
     
@@ -240,6 +249,7 @@ export async function getCustomers(page = 1, limit = 20) {
 }
 
 export async function getRefillRequests() {
+  await requireAdmin();
   try {
     const refills = await prisma.order.findMany({
       where: { status: "refill" },
@@ -266,6 +276,7 @@ export async function getRefillRequests() {
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
+  await requireAdmin();
   try {
     await prisma.order.update({
       where: { id: orderId },
@@ -279,6 +290,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
 }
 
 export async function refundOrder(orderId: string) {
+  await requireAdmin();
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -324,6 +336,7 @@ export async function refundOrder(orderId: string) {
 }
 
 export async function resendOrder(orderId: string) {
+  await requireAdmin();
   try {
     await prisma.order.update({
       where: { id: orderId },
@@ -341,6 +354,7 @@ export async function updateUserFunds(
   amount: number,
   type: "add" | "remove"
 ) {
+  await requireAdmin();
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { success: false, error: "User not found" };

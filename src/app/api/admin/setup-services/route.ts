@@ -68,10 +68,10 @@ export async function POST(req: Request) {
       message: "Services updated - StreamRise for viewers/clips/chatbot, External API for followers",
       results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Setup services error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to setup services" },
+      { error: "Failed to setup services" },
       { status: 500 }
     );
   }
@@ -79,6 +79,11 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const services = await prisma.service.findMany({
       select: {
         id: true,
@@ -101,7 +106,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ services, apis });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Setup services GET error:", error);
+    return NextResponse.json({ error: "Failed to fetch services" }, { status: 500 });
   }
 }

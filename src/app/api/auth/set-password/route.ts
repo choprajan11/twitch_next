@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { createSessionToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, code, password } = await request.json();
 
-    if (!email || !password) {
+    if (!email || !code || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email, verification code, and password are required" },
         { status: 400 }
       );
     }
@@ -28,30 +30,48 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        { error: "Invalid verification code" },
+        { status: 400 }
       );
     }
 
-    // Hash the password
+    if (!user.vcode) {
+      return NextResponse.json(
+        { error: "No pending verification. Please request a new code." },
+        { status: 400 }
+      );
+    }
+
+    const codeMatch = crypto.timingSafeEqual(
+      Buffer.from(String(user.vcode)),
+      Buffer.from(String(code))
+    );
+    if (!codeMatch) {
+      return NextResponse.json(
+        { error: "Invalid verification code" },
+        { status: 400 }
+      );
+    }
+
+    if (user.vcodeExpiresAt && user.vcodeExpiresAt < new Date()) {
+      return NextResponse.json(
+        { error: "Verification code has expired. Please request a new one." },
+        { status: 400 }
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Update user with new password
     await prisma.user.update({
       where: { email: normalizedEmail },
       data: { 
         password: hashedPassword,
         vcode: null,
+        vcodeExpiresAt: null,
       },
     });
 
-    // Create session token
-    const sessionToken = Buffer.from(JSON.stringify({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    })).toString('base64');
+    const sessionToken = createSessionToken(user);
 
     const response = NextResponse.json({
       success: true,

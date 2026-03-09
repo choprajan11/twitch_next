@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { createSessionToken } from "@/lib/auth";
+import { rateLimit } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() || "unknown";
+    const { allowed } = rateLimit(`login:${ip}`, 5, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -14,6 +25,14 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    const { allowed: emailAllowed } = rateLimit(`login:email:${normalizedEmail}`, 5, 300_000);
+    if (!emailAllowed) {
+      return NextResponse.json(
+        { error: "Too many login attempts for this account. Please try again later." },
+        { status: 429 }
+      );
+    }
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -49,13 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session token
-    const sessionToken = Buffer.from(JSON.stringify({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    })).toString('base64');
+    const sessionToken = createSessionToken(user);
 
     const response = NextResponse.json({
       success: true,

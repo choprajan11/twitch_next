@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { stripe, stripeConfig } from "@/lib/stripe";
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     }
 
     const formattedAmount = Number(numAmount.toFixed(2));
-    const txnId = `wallet_${session.userId}_${Date.now()}`;
+    const txnId = `wallet_${session.userId}_${crypto.randomUUID()}`;
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },

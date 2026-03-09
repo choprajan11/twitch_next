@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import jwt from "jsonwebtoken";
 
 interface SessionUser {
   userId: string;
@@ -15,16 +16,17 @@ function getSessionFromCookie(request: NextRequest): SessionUser | null {
       return null;
     }
 
-    const session = JSON.parse(
-      Buffer.from(sessionCookie.value, 'base64').toString()
-    ) as SessionUser;
+    const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_SECRET;
+    if (!secret) return null;
 
-    // Check if session is expired
-    if (session.exp < Date.now()) {
-      return null;
-    }
-
-    return session;
+    const decoded = jwt.verify(sessionCookie.value, secret) as jwt.JwtPayload;
+    
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      exp: (decoded.exp ?? 0) * 1000,
+    };
   } catch {
     return null;
   }
@@ -33,7 +35,6 @@ function getSessionFromCookie(request: NextRequest): SessionUser | null {
 export async function updateSession(request: NextRequest) {
   const session = getSessionFromCookie(request);
 
-  // Protected routes
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
@@ -48,8 +49,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  // Redirect logged-in users from homepage to dashboard,
-  // unless they explicitly clicked the logo/home link (indicated by ?home=true)
   if (isHomepage && session && !request.nextUrl.searchParams.has('home')) {
     const target = session.role === 'admin' ? '/admin' : '/dashboard';
     return NextResponse.redirect(new URL(target, request.url));

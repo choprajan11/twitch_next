@@ -16,7 +16,6 @@ export default function FreeFollowersForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  const [isNewUser, setIsNewUser] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,12 +59,7 @@ export default function FreeFollowersForm() {
         throw new Error(data.error || "Failed to send verification code");
       }
 
-      setIsNewUser(data.isNewUser);
-      if (data.devCode) {
-        setMessage(`[DEV MODE] Your code is: ${data.devCode}`);
-      } else {
-        setMessage(`Verification code sent to ${submittedEmail}`);
-      }
+      setMessage(`Verification code sent to ${submittedEmail}`);
       setStep("verify");
     } catch (err: unknown) {
       const errorMessage =
@@ -361,9 +355,7 @@ export default function FreeFollowersForm() {
       {step === "password" && (
         <form onSubmit={handlePasswordSubmit} className="space-y-5">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {isNewUser
-              ? "Create a password to secure your new account"
-              : "Set a password for your account"}
+            Set a password to secure your account
           </p>
 
           <div>

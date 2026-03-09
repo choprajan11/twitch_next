@@ -369,7 +369,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">one-time</span>
                         </div>
                       </div>
-                      <Link href={`/checkout?service=${service.slug}&plan=${plan.id}&serviceName=${encodeURIComponent(service.name)}&planName=${encodeURIComponent(plan.name)}&price=${plan.price.toFixed(2)}`} className="w-full block">
+                      <Link href={`/checkout?service=${service.slug}&plan=${plan.id}`} className="w-full block">
                         <Button
                           className={`w-full font-bold h-11 ${plan.popular ? "shadow-lg" : ""}`}
                           style={plan.popular ? { backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}

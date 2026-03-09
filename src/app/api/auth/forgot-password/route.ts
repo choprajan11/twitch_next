@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
+import crypto from "crypto";
 import { rateLimit } from "@/lib/security";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 const isDev = process.env.NODE_ENV === "development";
+const CODE_TTL_MS = 10 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() || "unknown";
     const { allowed } = rateLimit(`forgot-pw:${ip}`, 3, 60_000);
     if (!allowed) {
       return NextResponse.json(
@@ -32,7 +34,6 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     });
 
-    // Always return success to prevent email enumeration
     if (!user || !user.password) {
       return NextResponse.json({
         success: true,
@@ -40,17 +41,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { vcode: code },
+      data: { vcode: code, vcodeExpiresAt: expiresAt },
     });
 
-    if (isDev || !resend) {
+    if (isDev && !resend) {
       console.log(`\n${"=".repeat(50)}`);
-      console.log(`🔑 PASSWORD RESET CODE for ${normalizedEmail}: ${code}`);
+      console.log(`PASSWORD RESET CODE for ${normalizedEmail}: ${code}`);
       console.log(`${"=".repeat(50)}\n`);
-    } else {
+    } else if (resend) {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || "GrowTwitch <noreply@growtwitch.com>",
         to: normalizedEmail,
@@ -72,7 +75,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "If an account exists, a reset code has been sent.",
-      ...(isDev && { devCode: code }),
     });
   } catch (error) {
     console.error("Forgot password error:", error);

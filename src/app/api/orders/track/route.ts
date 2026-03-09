@@ -1,48 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: "Please log in to track orders" },
+      { status: 401 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const orderId = searchParams.get("orderId");
-  const email = searchParams.get("email");
 
-  if (!orderId && !email) {
+  if (!orderId) {
     return NextResponse.json(
-      { error: "Please provide an order ID or email" },
+      { error: "Please provide an order ID" },
       { status: 400 }
     );
   }
 
   try {
-    let order;
-
-    if (orderId) {
-      order = await prisma.order.findFirst({
-        where: {
-          OR: [
-            { id: orderId },
-            { oid: orderId },
-          ],
-        },
-        include: {
-          service: true,
-        },
-      });
-    } else if (email) {
-      order = await prisma.order.findFirst({
-        where: {
-          user: {
-            email: email,
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          service: true,
-        },
-      });
-    }
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: orderId },
+          { oid: orderId },
+        ],
+        userId: session.userId,
+      },
+      include: {
+        service: true,
+      },
+    });
 
     if (!order) {
       return NextResponse.json(
