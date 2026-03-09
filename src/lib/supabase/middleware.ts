@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import jwt from "jsonwebtoken";
+import { jwtVerify } from 'jose'
 
 interface SessionUser {
   userId: string;
@@ -8,24 +8,29 @@ interface SessionUser {
   exp: number;
 }
 
-function getSessionFromCookie(request: NextRequest): SessionUser | null {
+async function getSessionFromCookie(request: NextRequest): Promise<SessionUser | null> {
+  const sessionCookie = request.cookies.get('session');
+
+  if (!sessionCookie?.value) {
+    return null;
+  }
+
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_SECRET;
+  if (!secret) {
+    return null;
+  }
+
   try {
-    const sessionCookie = request.cookies.get('session');
-    
-    if (!sessionCookie?.value) {
-      return null;
-    }
+    const { payload } = await jwtVerify(
+      sessionCookie.value,
+      new TextEncoder().encode(secret)
+    );
 
-    const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_SECRET;
-    if (!secret) return null;
-
-    const decoded = jwt.verify(sessionCookie.value, secret) as jwt.JwtPayload;
-    
     return {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role,
-      exp: (decoded.exp ?? 0) * 1000,
+      userId: payload.userId as string,
+      email: payload.email as string,
+      role: payload.role as string | undefined,
+      exp: ((payload.exp ?? 0) as number) * 1000,
     };
   } catch {
     return null;
@@ -33,12 +38,13 @@ function getSessionFromCookie(request: NextRequest): SessionUser | null {
 }
 
 export async function updateSession(request: NextRequest) {
-  const session = getSessionFromCookie(request);
+  const session = await getSessionFromCookie(request);
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
-  const isHomepage = request.nextUrl.pathname === '/';
+  const path = request.nextUrl.pathname;
+  const isAuthRoute = path.startsWith('/login');
+  const isAdminRoute = path.startsWith('/admin');
+  const isDashboardRoute = path.startsWith('/dashboard');
+  const isHomepage = path === '/';
 
   if ((isAdminRoute || isDashboardRoute) && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
