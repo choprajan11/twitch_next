@@ -52,6 +52,18 @@ function CheckoutForm() {
       .finally(() => setIsLoading(false));
   }, [serviceSlug, planId]);
 
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const chatCategories = [
+    { id: "random", label: "Random Chat Messages", desc: "~100 natural, varied messages", defaultOn: true },
+    { id: "hype", label: "Hype & Excitement", desc: "LET'S GO, POG, etc." },
+    { id: "reactions", label: "Reactions & Emotes", desc: "LUL, Kappa, KEKW, etc." },
+    { id: "questions", label: "Questions & Engagement", desc: "What game is next?, etc." },
+    { id: "compliments", label: "Compliments & Support", desc: "Great play!, Love the stream, etc." },
+    { id: "casual", label: "Casual Conversation", desc: "Hey chat, GGs, etc." },
+  ];
+  const [selectedChatCategories, setSelectedChatCategories] = useState<string[]>(["random"]);
+
   const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
   const isChatbotService = serviceSlug?.includes("chat") || serviceSlug?.includes("bot");
 
@@ -63,7 +75,7 @@ function CheckoutForm() {
   const serviceName = resolvedServiceName || "Service";
   const planName = resolvedPlanName || "Selected Plan";
   const securePrice = Number(resolvedPrice || "0").toFixed(2);
-  const canSubmit = !isLoading && resolvedPrice && !error;
+  const canSubmit = !isLoading && resolvedPrice && !error && agreedToTerms;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -141,6 +153,21 @@ function CheckoutForm() {
                   </h2>
                 </div>
                 <div className="p-6 space-y-5">
+                  {!isLinkService && !isChatbotService && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Twitch Account Requirements</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400/80 mt-0.5">
+                          Your Twitch account must have a <strong>verified email</strong> and <strong>verified phone number</strong> to receive followers. 
+                          Unverified accounts may experience delivery issues.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {isLinkService ? (
                     <div>
                       <label htmlFor="link" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
@@ -162,17 +189,56 @@ function CheckoutForm() {
 
                   {isChatbotService && (
                     <div>
-                      <label htmlFor="comments" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Chat Messages <span className="text-zinc-400 font-normal">(optional)</span>
+                      <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3">
+                        Chat Message Style
                       </label>
-                      <textarea
-                        id="comments"
-                        name="comments"
-                        rows={4}
-                        placeholder={"Enter custom chat messages, one per line.\nLeave empty for default random messages."}
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white resize-none"
-                      />
-                      <p className="text-xs font-medium text-zinc-500 mt-2">One message per line. Bots will rotate through these messages randomly.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {chatCategories.map((cat) => {
+                          const isSelected = selectedChatCategories.includes(cat.id);
+                          return (
+                            <label
+                              key={cat.id}
+                              className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                isSelected
+                                  ? "border-[#9146FF] bg-[#9146FF]/5"
+                                  : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/30"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {
+                                  setSelectedChatCategories((prev) =>
+                                    isSelected ? prev.filter((c) => c !== cat.id) : [...prev, cat.id]
+                                  );
+                                }}
+                                className="mt-0.5 w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-[#9146FF] focus:ring-[#9146FF]"
+                              />
+                              <div className="min-w-0">
+                                <span className="text-sm font-semibold text-zinc-900 dark:text-white block">{cat.label}</span>
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400">{cat.desc}</span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <input type="hidden" name="comments" value={selectedChatCategories.join(",")} />
+
+                      <div className="mt-3">
+                        <details className="group">
+                          <summary className="text-xs font-medium text-[#9146FF] cursor-pointer hover:underline">
+                            Or enter custom messages instead
+                          </summary>
+                          <textarea
+                            id="customMessages"
+                            name="customMessages"
+                            rows={3}
+                            placeholder={"Enter custom chat messages, one per line..."}
+                            className="mt-2 w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white resize-none"
+                          />
+                          <p className="text-xs font-medium text-zinc-500 mt-1">One message per line. Overrides selected categories above.</p>
+                        </details>
+                      </div>
                     </div>
                   )}
 
@@ -273,10 +339,29 @@ function CheckoutForm() {
                         <span className="text-4xl font-black text-[#9146FF]">${securePrice}</span>
                       )}
                     </div>
+                    <label className="flex items-start gap-3 mb-5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-[#9146FF] focus:ring-[#9146FF] cursor-pointer"
+                      />
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        I agree to the{" "}
+                        <a href="/terms" target="_blank" className="text-[#9146FF] hover:underline font-medium">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="/refund-policy" target="_blank" className="text-[#9146FF] hover:underline font-medium">
+                          Refund Policy
+                        </a>
+                        . I understand that results may vary and delivery times are estimates.
+                      </span>
+                    </label>
                     <Button
                       type="submit"
                       isDisabled={isSubmitting || !canSubmit}
-                      className="w-full h-14 bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold text-lg shadow-lg shadow-[#9146FF]/30 transition-transform active:scale-95 glow-animation rounded-xl"
+                      className="w-full h-14 bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold text-lg shadow-lg shadow-[#9146FF]/30 transition-transform active:scale-95 glow-animation rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? "Processing..." : "Pay Securely"}
                     </Button>

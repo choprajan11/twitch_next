@@ -145,11 +145,49 @@ export async function POST(req: Request) {
       );
     }
 
+    if (service.type === "followers" || service.slug?.includes("follower")) {
+      try {
+        const twitchRes = await fetch("https://gql.twitch.tv/gql", {
+          method: "POST",
+          headers: {
+            "Client-ID": process.env.TWITCH_GQL_CLIENT_ID || "kimne78kx3ncx6brgo4mv6wki5h1ko",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: `query { user(login: "${parsedLink.replace(/[^a-zA-Z0-9_]/g, "")}") { id } }`,
+          }),
+        });
+        const twitchData = await twitchRes.json();
+        if (!twitchData?.data?.user) {
+          return NextResponse.json(
+            { error: "Twitch account not found. Please check the username and ensure your account has a verified email and phone number." },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // Don't block order if Twitch API is temporarily unavailable
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { email: emailClean },
       create: { email: emailClean },
       update: {},
     });
+
+    const activeOrder = await prisma.order.findFirst({
+      where: {
+        userId: user.id,
+        serviceId: service.id,
+        status: { in: ["payment", "pending", "processing", "inprogress"] },
+      },
+    });
+    if (activeOrder) {
+      return NextResponse.json(
+        { error: "You already have an active order for this service. Please wait until it is completed or cancelled before placing a new one." },
+        { status: 409 }
+      );
+    }
 
     const price = Number(selectedPlan.price.toFixed(2));
     const oid = generateOid();

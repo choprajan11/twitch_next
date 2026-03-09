@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
       status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
       service: order.service.name,
       quantity: order.quantity,
+      startCount: order.startCount,
+      remains: order.remains,
       createdAt: order.createdAt.toISOString(),
       progress: progress,
     });

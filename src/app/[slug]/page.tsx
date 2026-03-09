@@ -346,39 +346,44 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                   Select a Package
                 </h2>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-3 gap-3">
                   {plans.map((plan) => (
-                    <div
+                    <Link
                       key={plan.id}
-                      className={`relative p-5 rounded-xl border-2 transition-all group ${
-                        plan.popular
-                          ? "border-[#9146FF] bg-[#9146FF]/5"
-                          : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/50"
-                      }`}
+                      href={`/checkout?service=${service.slug}&plan=${plan.id}`}
+                      className="block group/plan"
                     >
-                      {plan.popular && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#9146FF] to-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          Most Popular
+                      <div
+                        className={`relative p-4 rounded-xl border-2 transition-all h-full flex flex-col ${
+                          plan.popular
+                            ? "border-[#9146FF] bg-[#9146FF]/5"
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/50"
+                        }`}
+                      >
+                        {plan.popular && (
+                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#9146FF] to-cyan-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                            Popular
+                          </div>
+                        )}
+                        <div className={`text-center ${plan.popular ? "pt-1" : ""}`}>
+                          <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white leading-tight">{plan.name}</h3>
+                          <span className="text-base sm:text-lg font-black block mt-1" style={{ color: content.color }}>${plan.price.toFixed(2)}</span>
                         </div>
-                      )}
-                      <div className="pt-2">
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">{plan.name}</h3>
-                        <div className="flex items-baseline gap-1 mb-4">
-                          <span className="text-2xl font-black" style={{ color: content.color }}>${plan.price.toFixed(2)}</span>
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">one-time</span>
+                        <div className="mt-3">
+                          <div
+                            className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all ${
+                              plan.popular
+                                ? "text-white shadow-md"
+                                : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 group-hover/plan:bg-[#9146FF]/10 group-hover/plan:text-[#9146FF]"
+                            }`}
+                            style={plan.popular ? { backgroundColor: content.color, boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
+                          >
+                            Buy Now
+                          </div>
                         </div>
                       </div>
-                      <Link href={`/checkout?service=${service.slug}&plan=${plan.id}`} className="w-full block">
-                        <Button
-                          className={`w-full font-bold h-11 ${plan.popular ? "shadow-lg" : ""}`}
-                          style={plan.popular ? { backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
-                          variant={plan.popular ? "primary" : "secondary"}
-                        >
-                          Buy Now
-                        </Button>
-                      </Link>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -416,6 +421,18 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                   </div>
                 ))}
               </div>
+              {slug.includes("follower") && (
+                <div className="px-6 pb-4">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400/80 leading-relaxed">
+                      Your Twitch account must have a <strong>verified email</strong> and <strong>phone number</strong> to receive followers.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="px-6 pb-6 pt-2">
                 <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center justify-center gap-2">

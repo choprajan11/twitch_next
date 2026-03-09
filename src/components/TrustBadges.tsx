@@ -1,5 +1,4 @@
-import { FaStripe, FaCcVisa, FaCcMastercard, FaPaypal, FaBitcoin, FaLock, FaShieldAlt } from "react-icons/fa";
-import { SiApplepay, SiGooglepay } from "react-icons/si";
+import { FaStripe, FaCcVisa, FaCcMastercard, FaBitcoin, FaLock, FaShieldAlt } from "react-icons/fa";
 
 export default function TrustBadges() {
   return (
@@ -31,21 +30,6 @@ export default function TrustBadges() {
             {/* Mastercard */}
             <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity" title="Mastercard">
               <FaCcMastercard className="w-10 h-10 text-[#EB001B]" />
-            </div>
-
-            {/* PayPal */}
-            <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity" title="PayPal">
-              <FaPaypal className="w-8 h-8 text-[#003087]" />
-            </div>
-
-            {/* Apple Pay */}
-            <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity" title="Apple Pay">
-              <SiApplepay className="w-10 h-10 text-zinc-800 dark:text-white" />
-            </div>
-
-            {/* Google Pay */}
-            <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity" title="Google Pay">
-              <SiGooglepay className="w-10 h-10 text-zinc-800 dark:text-white" />
             </div>
 
             {/* Bitcoin/Crypto */}
