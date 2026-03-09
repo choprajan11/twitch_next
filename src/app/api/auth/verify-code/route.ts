@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { createSessionToken } from "@/lib/auth";
 import { rateLimit } from "@/lib/security";
+import { logSecurityEvent, getClientIp, trackFailedAttempt } from "@/lib/security-monitor";
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +47,16 @@ export async function POST(request: NextRequest) {
     const codeA = Buffer.from(String(user.vcode));
     const codeB = Buffer.from(String(code));
     if (codeA.length !== codeB.length || !crypto.timingSafeEqual(codeA, codeB)) {
+      const ip = getClientIp(request);
+      trackFailedAttempt(ip);
+      logSecurityEvent({
+        type: "auth_failure",
+        severity: "warn",
+        ip,
+        path: "/api/auth/verify-code",
+        method: "POST",
+        details: { email: normalizedEmail, reason: "invalid_code" },
+      });
       return NextResponse.json(
         { error: "Invalid verification code" },
         { status: 400 }
@@ -57,41 +68,31 @@ export async function POST(request: NextRequest) {
       data: { vcode: null, vcodeExpiresAt: null },
     });
 
-    const needsPassword = !user.password;
+    const sessionToken = createSessionToken(user);
 
-    if (!needsPassword) {
-      const sessionToken = createSessionToken(user);
-
-      const response = NextResponse.json({
-        success: true,
-        needsPassword: false,
-        message: "Logged in successfully",
-      });
-
-      response.cookies.set('session', sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60,
-        path: '/',
-      });
-
-      response.cookies.set('user_email', user.email, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60,
-        path: '/',
-      });
-
-      return response;
-    }
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      needsPassword: true,
-      message: "Please set your password",
+      needsPassword: !user.password,
+      message: "Logged in successfully",
     });
+
+    response.cookies.set('session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    response.cookies.set('user_email', user.email, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error("Error verifying code:", error);
     return NextResponse.json(

@@ -3,10 +3,27 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createSessionToken } from "@/lib/auth";
 import { rateLimit } from "@/lib/security";
+import { logSecurityEvent, getClientIp, isIpBlocked, trackFailedAttempt } from "@/lib/security-monitor";
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() || "unknown";
+    const ip = getClientIp(request);
+
+    if (isIpBlocked(ip)) {
+      logSecurityEvent({
+        type: "ip_blocked",
+        severity: "critical",
+        ip,
+        path: "/api/auth/login",
+        method: "POST",
+        blocked: true,
+      });
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { allowed } = rateLimit(`login:${ip}`, 5, 60_000);
     if (!allowed) {
       return NextResponse.json(
@@ -62,6 +79,16 @@ export async function POST(request: NextRequest) {
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
+      trackFailedAttempt(ip);
+      logSecurityEvent({
+        type: "auth_failure",
+        severity: "warn",
+        ip,
+        userId: user.id,
+        path: "/api/auth/login",
+        method: "POST",
+        details: { email: normalizedEmail, reason: "invalid_password" },
+      });
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }

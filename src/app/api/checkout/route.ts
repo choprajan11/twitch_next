@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { isDisposableEmail, rateLimit } from "@/lib/security";
 import { processOrderImmediately } from "@/lib/orderProcessor";
 import { processStripeRequest } from "@/lib/stripe";
+import { logSecurityEvent, detectSuspiciousInput, getClientIp } from "@/lib/security-monitor";
 
 type Plan = {
   id: string;
@@ -16,10 +17,8 @@ type Plan = {
 };
 
 function generateOid(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const rand = Array.from({ length: 4 }, () =>
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
+  const bytes = crypto.randomBytes(4);
+  const rand = bytes.toString("hex").slice(0, 6);
   return `GT-${Date.now()}-${rand}`;
 }
 
@@ -61,6 +60,23 @@ export async function POST(req: Request) {
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const inputsToScan = [serviceSlug, planId, link, email, comments].filter(Boolean);
+    if (inputsToScan.some((val) => typeof val === "string" && detectSuspiciousInput(val))) {
+      logSecurityEvent({
+        type: "suspicious_input",
+        severity: "critical",
+        ip: getClientIp(req),
+        path: "/api/checkout",
+        method: "POST",
+        details: { serviceSlug, link: link?.substring(0, 50) },
+        blocked: true,
+      });
+      return NextResponse.json(
+        { error: "Invalid input detected" },
         { status: 400 }
       );
     }

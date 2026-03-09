@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { logSecurityEvent, getClientIp } from "@/lib/security-monitor";
 
 const webhookSecret = process.env.COINBASE_WEBHOOK_SECRET!;
 
@@ -19,6 +20,15 @@ export async function POST(req: Request) {
       .digest("hex");
 
     if (signature !== expectedSignature) {
+      logSecurityEvent({
+        type: "webhook_signature_failure",
+        severity: "critical",
+        ip: getClientIp(req),
+        path: "/api/webhooks/coinbase",
+        method: "POST",
+        details: { gateway: "coinbase" },
+        blocked: true,
+      });
       return NextResponse.json(
         { error: "Invalid signature" },
         { status: 400 }
@@ -34,15 +44,26 @@ export async function POST(req: Request) {
     }
 
     const txnId = eventData.metadata.order_id;
-    const transaction = await prisma.transaction.findUnique({
-      where: { txnId },
-    });
-
-    if (!transaction || transaction.status !== "pending") {
-      return NextResponse.json({ received: true });
-    }
-
     if (eventType === "charge:confirmed" || eventType === "charge:resolved") {
+      const claimed = await prisma.transaction.updateMany({
+        where: { txnId, status: "pending" },
+        data: {
+          status: "complete",
+          gatewayTxn: String(eventData.code || eventData.id),
+        },
+      });
+
+      if (claimed.count === 0) {
+        return NextResponse.json({ received: true });
+      }
+
+      const transaction = await prisma.transaction.findUnique({
+        where: { txnId },
+      });
+      if (!transaction) {
+        return NextResponse.json({ received: true });
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: transaction.userId },
       });
@@ -52,14 +73,6 @@ export async function POST(req: Request) {
           prisma.user.update({
             where: { id: user.id },
             data: { funds: { increment: transaction.amount } },
-          }),
-          prisma.transaction.update({
-            where: { txnId },
-            data: {
-              status: "complete",
-              oldFunds: user.funds,
-              gatewayTxn: eventData.code || eventData.id,
-            },
           }),
           prisma.fundLog.create({
             data: {
@@ -74,8 +87,8 @@ export async function POST(req: Request) {
         ]);
       }
     } else if (eventType === "charge:failed") {
-      await prisma.transaction.update({
-        where: { txnId },
+      await prisma.transaction.updateMany({
+        where: { txnId, status: "pending" },
         data: { status: "failed" },
       });
     }
