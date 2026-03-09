@@ -34,7 +34,7 @@ export function encrypt(text: string): string {
 
 export function decrypt(encryptedText: string): string {
   if (!encryptedText.includes(":")) {
-    return encryptedText;
+    throw new Error("Invalid encrypted data: not in expected format");
   }
 
   const parts = encryptedText.split(":");

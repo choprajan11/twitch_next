@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/security";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -8,6 +9,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: "Please log in to track orders" },
       { status: 401 }
+    );
+  }
+
+  const { allowed } = rateLimit(`track:${session.userId}`, 20, 60_000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
     );
   }
 

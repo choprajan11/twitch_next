@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import SignOutButton from "@/components/auth/SignOutButton";
+import SetPasswordBanner from "@/components/dashboard/SetPasswordBanner";
 
 interface UserInfo {
   name: string | null;
@@ -67,6 +68,7 @@ export default function DashboardLayout({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [hasPassword, setHasPassword] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function DashboardLayout({
       .then((data) => {
         if (data.success && data.user) {
           setUserInfo({ name: data.user.name, email: data.user.email, funds: data.user.funds });
+          setHasPassword(data.user.hasPassword ?? true);
         }
       })
       .catch(() => {});
@@ -231,6 +234,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex-1 min-w-0 md:bento-card-static md:h-[calc(100vh-2rem)] md:sticky md:top-4 md:overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          {!hasPassword && <SetPasswordBanner />}
           {children}
         </div>
       </div>

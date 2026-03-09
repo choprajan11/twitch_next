@@ -1,4 +1,5 @@
 import disposableDomains from "disposable-email-domains";
+import { logSecurityEvent } from "./security-monitor";
 
 const disposableSet = new Set(disposableDomains);
 
@@ -24,6 +25,11 @@ export function rateLimit(
   }
 
   if (entry.count >= maxRequests) {
+    logSecurityEvent({
+      type: "rate_limit_hit",
+      severity: "warn",
+      details: { key, maxRequests, windowMs },
+    });
     return { allowed: false, remaining: 0 };
   }
 
@@ -31,7 +37,6 @@ export function rateLimit(
   return { allowed: true, remaining: maxRequests - entry.count };
 }
 
-// Periodic cleanup to prevent memory leaks
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();

@@ -275,9 +275,18 @@ export async function getRefillRequests() {
   }
 }
 
+const ALLOWED_ORDER_STATUSES = [
+  "payment", "pending", "processing", "completed",
+  "partial", "cancelled", "refunded", "refill", "failed",
+] as const;
+
 export async function updateOrderStatus(orderId: string, newStatus: string) {
   await requireAdmin();
   try {
+    if (!ALLOWED_ORDER_STATUSES.includes(newStatus as typeof ALLOWED_ORDER_STATUSES[number])) {
+      return { success: false, error: `Invalid status. Allowed: ${ALLOWED_ORDER_STATUSES.join(", ")}` };
+    }
+
     await prisma.order.update({
       where: { id: orderId },
       data: { status: newStatus },
@@ -360,6 +369,9 @@ export async function updateUserFunds(
     if (!user) return { success: false, error: "User not found" };
 
     const numAmount = Math.abs(amount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0 || numAmount > 100_000) {
+      return { success: false, error: "Invalid amount. Must be between $0.01 and $100,000." };
+    }
     if (type === "remove" && user.funds < numAmount) {
       return { success: false, error: "Insufficient funds" };
     }

@@ -16,6 +16,7 @@ export async function GET() {
         email: true,
         funds: true,
         role: true,
+        password: true,
         createdAt: true,
       },
     });
@@ -31,6 +32,7 @@ export async function GET() {
         email: user.email,
         funds: user.funds,
         role: user.role,
+        hasPassword: !!user.password,
         createdAt: user.createdAt.toISOString(),
       },
     });

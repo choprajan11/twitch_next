@@ -5,7 +5,7 @@ import { Button, InputOTP } from "@heroui/react";
 import TwitchUsernameInput from "@/components/TwitchUsernameInput";
 import { getSessionEmail } from "@/lib/sessionClient";
 
-type Step = "form" | "verify" | "password" | "success";
+type Step = "form" | "verify" | "success";
 
 const inputClass =
   "w-full h-12 px-4 bg-zinc-50 dark:bg-zinc-800/50 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none transition-colors hover:border-[#9146FF]/50 focus:border-[#9146FF] focus:ring-2 focus:ring-[#9146FF]/20";
@@ -15,8 +15,6 @@ export default function FreeFollowersForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [needsPassword, setNeedsPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -86,46 +84,6 @@ export default function FreeFollowersForm() {
 
       if (!res.ok) {
         throw new Error(data.error || "Invalid verification code");
-      }
-
-      if (data.needsPassword) {
-        setNeedsPassword(true);
-        setMessage("Email verified! Set a password to secure your account.");
-        setStep("password");
-      } else {
-        await placeOrder(username, email);
-      }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handlePasswordSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/auth/set-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to set password");
       }
 
       await placeOrder(username, email);
@@ -352,38 +310,6 @@ export default function FreeFollowersForm() {
         </form>
       )}
 
-      {step === "password" && (
-        <form onSubmit={handlePasswordSubmit} className="space-y-5">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Set a password to secure your account
-          </p>
-
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className={inputClass}
-            />
-            <p className="text-xs text-zinc-500 mt-2">Minimum 8 characters</p>
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full h-12 font-bold text-base"
-            style={{ backgroundColor: "#9146FF", color: "white" }}
-            isDisabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Set Password & Get Followers"}
-          </Button>
-        </form>
-      )}
     </div>
   );
 }

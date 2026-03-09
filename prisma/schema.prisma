@@ -161,3 +161,22 @@ model FundLog {
   @@index([userId])
   @@index([createdAt])
 }
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  type      String
+  severity  String   @default("info")
+  ip        String?
+  userId    String?
+  path      String?
+  method    String?
+  details   Json?
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([ip])
+  @@index([userId])
+  @@index([severity])
+  @@index([createdAt])
+}
