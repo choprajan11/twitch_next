@@ -1,140 +1,69 @@
-const comparisonData = [
-  {
-    feature: "Real Followers",
-    us: "100% Real Users",
-    usIcon: "check",
-    others: "Often Bots",
-    othersIcon: "x"
-  },
-  {
-    feature: "Delivery Speed",
-    us: "60-Second Start",
-    usIcon: "check",
-    others: "Hours or Days",
-    othersIcon: "x"
-  },
-  {
-    feature: "Drop Rate",
-    us: "0% Guaranteed",
-    usIcon: "check",
-    others: "High Drop Rates",
-    othersIcon: "x"
-  },
-  {
-    feature: "Password Required",
-    us: "Never Required",
-    usIcon: "check",
-    others: "Often Required",
-    othersIcon: "x"
-  },
-  {
-    feature: "Support",
-    us: "24/7 Live Chat",
-    usIcon: "check",
-    others: "Limited/None",
-    othersIcon: "x"
-  },
-  {
-    feature: "Refill Guarantee",
-    us: "30-Day Free Refills",
-    usIcon: "check",
-    others: "No Guarantee",
-    othersIcon: "x"
-  },
-  {
-    feature: "Payment Options",
-    us: "Cards, PayPal, Crypto",
-    usIcon: "check",
-    others: "Limited Options",
-    othersIcon: "x"
-  },
-  {
-    feature: "Account Safety",
-    us: "100% Safe",
-    usIcon: "check",
-    others: "Risk of Ban",
-    othersIcon: "x"
-  }
+const features = [
+  { text: "100% Real Users", icon: "users" },
+  { text: "60-Second Delivery", icon: "zap" },
+  { text: "Zero Drop Rate", icon: "shield" },
+  { text: "No Password Required", icon: "lock" },
+  { text: "24/7 Live Support", icon: "chat" },
+  { text: "30-Day Refill Guarantee", icon: "refresh" },
 ];
 
-const CheckIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-    <polyline points="20 6 9 17 4 12"></polyline>
-  </svg>
-);
-
-const XIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-    <line x1="18" y1="6" x2="6" y2="18"></line>
-    <line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
+const IconMap: Record<string, JSX.Element> = {
+  users: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+  zap: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>,
+  shield: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+  lock: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
+  chat: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+  refresh: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>,
+};
 
 export default function ComparisonSection() {
   return (
     <section className="w-full max-w-7xl mx-auto px-4 py-16 lg:py-24">
-      <div className="text-center mb-12">
-        <span className="inline-block px-4 py-2 rounded-full bg-[#9146FF]/10 text-[#9146FF] text-sm font-bold mb-4">
-          Why Choose Us
-        </span>
-        <h2 className="text-3xl lg:text-5xl font-bold mb-4 text-zinc-900 dark:text-white">
-          How We <span className="gradient-text">Compare</span>
-        </h2>
-        <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-          See why thousands of streamers trust us over the competition
-        </p>
-      </div>
-
-      <div className="bento-card overflow-hidden max-w-4xl mx-auto">
-        {/* Header Row */}
-        <div className="grid grid-cols-3 bg-[#9146FF]/5 dark:bg-[#9146FF]/10">
-          <div className="p-4 lg:p-6 font-bold text-zinc-900 dark:text-white">
-            Feature
-          </div>
-          <div className="p-4 lg:p-6 text-center">
-            <div className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9146FF] to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                G
+      <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        {/* Left side - Text content */}
+        <div className="flex-1 text-center lg:text-left">
+          <h2 className="text-3xl lg:text-5xl font-black mb-6 text-zinc-900 dark:text-white leading-tight">
+            Trusted by <span className="text-[#9146FF]">10,000+</span> Streamers Worldwide
+          </h2>
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-8 max-w-xl">
+            Join the community of creators who chose the safest and most reliable way to grow their Twitch presence.
+          </p>
+          
+          {/* Feature pills */}
+          <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-[#9146FF]/10 hover:text-[#9146FF] transition-colors"
+              >
+                <span className="text-[#9146FF]">{IconMap[feature.icon]}</span>
+                {feature.text}
               </div>
-              <span className="font-bold text-[#9146FF]">GrowTwitch</span>
-            </div>
-          </div>
-          <div className="p-4 lg:p-6 text-center font-bold text-zinc-500 dark:text-zinc-400">
-            Others
+            ))}
           </div>
         </div>
 
-        {/* Comparison Rows */}
-        {comparisonData.map((row, index) => (
-          <div
-            key={index}
-            className={`grid grid-cols-3 ${
-              index !== comparisonData.length - 1
-                ? "border-b border-zinc-100 dark:border-zinc-800"
-                : ""
-            }`}
-          >
-            <div className="p-4 lg:p-6 font-medium text-zinc-900 dark:text-white text-sm lg:text-base">
-              {row.feature}
+        {/* Right side - Stats */}
+        <div className="flex-shrink-0">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-[#9146FF]/10 to-transparent">
+              <div className="text-4xl lg:text-5xl font-black text-[#9146FF] mb-1">2M+</div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Followers Delivered</div>
             </div>
-            <div className="p-4 lg:p-6 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <CheckIcon />
-                <span className="text-sm lg:text-base text-zinc-700 dark:text-zinc-300 hidden sm:inline">
-                  {row.us}
-                </span>
-              </div>
+            <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent">
+              <div className="text-4xl lg:text-5xl font-black text-cyan-500 mb-1">99%</div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Satisfaction Rate</div>
             </div>
-            <div className="p-4 lg:p-6 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <XIcon />
-                <span className="text-sm lg:text-base text-zinc-500 dark:text-zinc-400 hidden sm:inline">
-                  {row.others}
-                </span>
-              </div>
+            <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-transparent">
+              <div className="text-4xl lg:text-5xl font-black text-green-500 mb-1">60s</div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Avg. Start Time</div>
+            </div>
+            <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-pink-500/10 to-transparent">
+              <div className="text-4xl lg:text-5xl font-black text-pink-500 mb-1">0%</div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Drop Rate</div>
             </div>
           </div>
-        ))}
+        </div>
       </div>
     </section>
   );

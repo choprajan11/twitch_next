@@ -1,4 +1,5 @@
 import { decrypt } from "./encryption";
+import { getMessagesForCategories, parseCustomMessages } from "./chatMessages";
 
 export const STREAMRISE_API_URL = "https://streamrise.ru/api";
 
@@ -17,7 +18,19 @@ function getStreamRiseToken(): string {
   if (!token) {
     throw new Error("STREAMRISE_TOKEN environment variable is required");
   }
-  return decrypt(token);
+  
+  // Support both encrypted (contains ":") and plain tokens
+  if (token.includes(":")) {
+    try {
+      return decrypt(token);
+    } catch {
+      // If decryption fails, use as-is
+      return token;
+    }
+  }
+  
+  // Plain token (not encrypted)
+  return token;
 }
 
 interface StreamRiseResponse {
@@ -87,13 +100,31 @@ export async function createStreamRiseOrder(
   }
 
   // For chat bots, upload messages first
-  if (serviceType === "chat_bots" && comments) {
-    const messages = comments.split("\n").filter((m) => m.trim());
-    if (messages.length > 0) {
-      const uploaded = await uploadChatMessages(channel, messages);
-      if (!uploaded) {
-        console.warn("Failed to upload chat messages, proceeding anyway");
+  if (serviceType === "chat_bots") {
+    let messages: string[] = [];
+    
+    if (comments) {
+      if (comments.startsWith("custom:")) {
+        // Custom messages from user
+        messages = parseCustomMessages(comments.slice(7));
+      } else if (comments.startsWith("categories:")) {
+        // Category-based messages
+        const categories = comments.slice(11);
+        messages = getMessagesForCategories(categories);
+      } else {
+        // Legacy format: assume newline-separated messages
+        messages = parseCustomMessages(comments);
       }
+    }
+    
+    // If no messages provided, use default random messages
+    if (messages.length === 0) {
+      messages = getMessagesForCategories(["random"]);
+    }
+    
+    const uploaded = await uploadChatMessages(channel, messages);
+    if (!uploaded) {
+      console.warn("Failed to upload chat messages, proceeding anyway");
     }
   }
 
@@ -144,4 +175,43 @@ export async function getStreamRiseOrderStatus(apiOrderId: string): Promise<{
 export function isStreamRiseService(serviceType: string | null | undefined): boolean {
   if (!serviceType) return false;
   return Object.keys(STREAMRISE_SERVICES).includes(serviceType);
+}
+
+export async function getStreamRiseBalance(): Promise<{ success: boolean; balance?: number; error?: string; notSupported?: boolean }> {
+  try {
+    const data = await streamriseFetch("/getCustomer");
+    
+    // getCustomer returns customer/account info including balance
+    if (data?.balance !== undefined) {
+      return { success: true, balance: parseFloat(data.balance) };
+    }
+    
+    // Check alternate field names
+    if (data?.funds !== undefined) {
+      return { success: true, balance: parseFloat(data.funds) };
+    }
+    
+    if (data?.credits !== undefined) {
+      return { success: true, balance: parseFloat(data.credits) };
+    }
+    
+    if (data?.error) {
+      return { success: false, error: data.error };
+    }
+    
+    // Log the response to help debug what fields are available
+    console.log("StreamRise getCustomer response:", JSON.stringify(data));
+    
+    return { 
+      success: false, 
+      error: "Balance field not found in response" 
+    };
+  } catch (error: any) {
+    console.error("StreamRise balance check error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export function isStreamRiseConfigured(): boolean {
+  return !!process.env.STREAMRISE_TOKEN;
 }

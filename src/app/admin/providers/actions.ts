@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { verifyApi, connectApi } from "@/lib/providers";
 import { encrypt, decrypt } from "@/lib/encryption";
+import { getStreamRiseBalance, isStreamRiseConfigured, STREAMRISE_SERVICES } from "@/lib/streamrise";
 
-export async function getProviders() {
+export async function getProviders(autoRefreshBalances = false) {
   await requireAdmin();
   try {
     const apis = await prisma.api.findMany({
@@ -14,16 +15,82 @@ export async function getProviders() {
       include: { _count: { select: { services: true, orders: true } } },
     });
 
-    return apis.map((api) => ({
-      id: api.id,
-      name: api.name,
-      url: api.url,
-      balance: (api.data as any)?.balance ?? null,
-      currency: (api.data as any)?.currency ?? "USD",
-      servicesCount: api._count.services,
-      ordersCount: api._count.orders,
-      createdAt: api.createdAt,
-    }));
+    const providers = await Promise.all(
+      apis.map(async (api) => {
+        let balance = (api.data as any)?.balance ?? null;
+        
+        // Auto-refresh balance if requested
+        if (autoRefreshBalances && api.url) {
+          try {
+            const apiData = (api.data as any) || {};
+            const keyParam = apiData.key || "key";
+            const apiKey = decrypt(api.key);
+            
+            const response = await connectApi(api.url, {
+              [keyParam]: apiKey,
+              action: "balance",
+            });
+            
+            if (response.success && response.data?.balance !== undefined) {
+              balance = parseFloat(response.data.balance);
+              // Update in database
+              await prisma.api.update({
+                where: { id: api.id },
+                data: { data: { ...apiData, balance } },
+              });
+            }
+          } catch (err) {
+            console.error(`Failed to refresh balance for ${api.name}:`, err);
+          }
+        }
+        
+        return {
+          id: api.id,
+          name: api.name,
+          url: api.url,
+          balance,
+          currency: (api.data as any)?.currency ?? "USD",
+          servicesCount: api._count.services,
+          ordersCount: api._count.orders,
+          createdAt: api.createdAt,
+          isStreamRise: false,
+        };
+      })
+    );
+
+    // Add StreamRise as a virtual provider if configured
+    if (isStreamRiseConfigured()) {
+      // Count StreamRise services and orders
+      const streamRiseServiceTypes = Object.keys(STREAMRISE_SERVICES);
+      const streamRiseServices = await prisma.service.count({
+        where: { type: { in: streamRiseServiceTypes }, status: true },
+      });
+      const streamRiseOrders = await prisma.order.count({
+        where: { service: { type: { in: streamRiseServiceTypes } } },
+      });
+      
+      let streamRiseBalance: number | null = null;
+      if (autoRefreshBalances) {
+        const balanceResult = await getStreamRiseBalance();
+        if (balanceResult.success) {
+          streamRiseBalance = balanceResult.balance ?? null;
+        }
+      }
+      
+      providers.unshift({
+        id: "streamrise",
+        name: "StreamRise",
+        url: "https://streamrise.ru",
+        balance: streamRiseBalance,
+        currency: "RUB",
+        servicesCount: streamRiseServices,
+        ordersCount: streamRiseOrders,
+        createdAt: new Date(),
+        isStreamRise: true,
+      });
+    }
+
+    return providers;
   } catch (error) {
     console.error("Failed to fetch providers:", error);
     return [];
@@ -123,6 +190,18 @@ export async function deleteProvider(id: string) {
 export async function checkBalance(id: string) {
   await requireAdmin();
   try {
+    // Handle StreamRise separately
+    if (id === "streamrise") {
+      const result = await getStreamRiseBalance();
+      return {
+        success: result.success,
+        balance: result.balance,
+        currency: "USD",
+        error: result.error,
+        notSupported: result.notSupported,
+      };
+    }
+
     const api = await prisma.api.findUnique({ where: { id } });
     if (!api) return { success: false, error: "Provider not found" };
 

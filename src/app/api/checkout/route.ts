@@ -55,11 +55,18 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, paymentMethod, comments } = body;
+    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (!agreedToTerms) {
+      return NextResponse.json(
+        { error: "Please agree to the Terms of Service and Refund Policy" },
         { status: 400 }
       );
     }

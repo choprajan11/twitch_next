@@ -137,7 +137,25 @@ export async function getProviders() {
       select: { id: true, name: true, url: true },
       orderBy: { createdAt: "desc" },
     });
-    return apis;
+    
+    const providers = apis.map(api => ({
+      id: api.id,
+      name: api.name,
+      url: api.url,
+      isStreamRise: false,
+    }));
+    
+    // Add StreamRise as a virtual provider if configured
+    if (process.env.STREAMRISE_TOKEN) {
+      providers.unshift({
+        id: "streamrise",
+        name: "StreamRise",
+        url: "https://streamrise.ru",
+        isStreamRise: true,
+      });
+    }
+    
+    return providers;
   } catch (error) {
     console.error("Failed to fetch providers:", error);
     return [];

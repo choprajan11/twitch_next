@@ -21,6 +21,7 @@ interface Provider {
   id: string;
   name: string;
   url: string;
+  isStreamRise: boolean;
 }
 
 export default function ServicesPage() {
@@ -186,8 +187,12 @@ export default function ServicesPage() {
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{svc.name}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs font-bold text-[#9146FF] uppercase tracking-wider">{svc.category}</span>
-                    {svc.apiId && svc.apiServiceId ? (
-                      <span className="text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-md">API #{svc.apiServiceId}</span>
+                    {svc.apiId === "streamrise" ? (
+                      <span className="text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-md">StreamRise</span>
+                    ) : svc.apiId && svc.apiServiceId ? (
+                      <span className="text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-md">
+                        {providers.find(p => p.id === svc.apiId)?.name || "API"} #{svc.apiServiceId}
+                      </span>
                     ) : (
                       <span className="text-[10px] font-bold bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-md">No API</span>
                     )}
@@ -397,31 +402,47 @@ export default function ServicesPage() {
                       </label>
                       <select
                         value={editApiId}
-                        onChange={(e) => setEditApiId(e.target.value)}
+                        onChange={(e) => {
+                          setEditApiId(e.target.value);
+                          // Clear API Service ID when switching to StreamRise
+                          if (e.target.value === "streamrise") {
+                            setEditApiServiceId("");
+                          }
+                        }}
                         className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm"
                       >
                         <option value="">No Provider</option>
                         {providers.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name} ({new URL(p.url).hostname})
+                            {p.name} {p.isStreamRise ? "(ENV)" : `(${new URL(p.url).hostname})`}
                           </option>
                         ))}
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-                        API Service ID
-                      </label>
-                      <input
-                        type="text"
-                        value={editApiServiceId}
-                        onChange={(e) => setEditApiServiceId(e.target.value)}
-                        placeholder="e.g. 8"
-                        className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm font-mono"
-                      />
-                      <p className="text-xs text-zinc-500 mt-1">The service ID from the SMM panel&apos;s service list.</p>
-                    </div>
+                    {editApiId === "streamrise" ? (
+                      <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                        <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">StreamRise Configuration</p>
+                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                          StreamRise uses the <strong>Service Type</strong> field above to determine which service to use. 
+                          Make sure to select the correct type (Viewers, Chat Bots, Clip Views, or Video Views).
+                        </p>
+                      </div>
+                    ) : editApiId ? (
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                          API Service ID
+                        </label>
+                        <input
+                          type="text"
+                          value={editApiServiceId}
+                          onChange={(e) => setEditApiServiceId(e.target.value)}
+                          placeholder="e.g. 8"
+                          className="w-full px-4 py-3 border border-[rgba(145,70,255,0.1)] rounded-xl bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 transition-all text-sm font-mono"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">The service ID from the SMM panel&apos;s service list.</p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>

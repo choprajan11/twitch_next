@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
                   value={fundAmount}
                   onChange={(e) => setFundAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none dark:text-white"
+                  className="w-full pl-8 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none dark:text-white transition-all"
                 />
               </div>
 

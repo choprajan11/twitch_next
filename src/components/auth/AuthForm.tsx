@@ -233,6 +233,12 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && email && !isLoading) {
+                  e.preventDefault();
+                  handleEmailSubmit(e as unknown as React.FormEvent);
+                }
+              }}
               placeholder="your@email.com"
               className={inputClass}
               autoFocus

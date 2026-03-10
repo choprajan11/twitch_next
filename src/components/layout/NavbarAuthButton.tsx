@@ -9,19 +9,15 @@ export function NavbarAuthButton() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for session cookie on client side
+    // Check for user_email cookie (session cookie is httpOnly so can't be read by JS)
     const checkAuth = () => {
       try {
         const cookies = document.cookie.split(';');
-        const sessionCookie = cookies.find(c => c.trim().startsWith('session='));
+        const userEmailCookie = cookies.find(c => c.trim().startsWith('user_email='));
         
-        if (sessionCookie) {
-          const value = sessionCookie.split('=')[1];
-          const session = JSON.parse(atob(value));
-          
-          if (session.exp > Date.now()) {
-            setIsLoggedIn(true);
-          }
+        if (userEmailCookie) {
+          // If user_email cookie exists, user is logged in
+          setIsLoggedIn(true);
         }
       } catch {
         // Invalid session
@@ -64,6 +60,10 @@ export function NavbarAuthButton() {
         className="font-bold shadow-[#9146FF]/30 rounded-xl"
       >
         Get Started
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
       </Button>
     </Link>
   );

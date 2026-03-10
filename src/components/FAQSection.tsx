@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept all major credit/debit cards through Stripe, as well as PayPal and cryptocurrency. All transactions are encrypted and secure."
+    a: "We accept all major credit/debit cards through Stripe, as well as cryptocurrency. All transactions are encrypted and secure."
   },
   {
     q: "What if my followers drop?",

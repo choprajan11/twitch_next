@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
+import { Button, Checkbox, Label } from "@heroui/react";
 import Link from "next/link";
 import { getServiceWithPlans, updateServicePlans } from "./actions";
 
@@ -171,16 +171,18 @@ export default function PackagesPage() {
                   className="w-full px-3 py-2 border border-[rgba(145,70,255,0.1)] rounded-lg bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 text-sm"
                 />
               </div>
-              <div className="flex items-end gap-2">
-                <label className="flex items-center gap-2 cursor-pointer py-2">
-                  <input
-                    type="checkbox"
-                    checked={plan.popular || false}
-                    onChange={(e) => updatePlan(index, "popular", e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-[#9146FF] focus:ring-[#9146FF]/30"
-                  />
-                  <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Popular</span>
-                </label>
+              <div className="flex items-end gap-2 py-2">
+                <Checkbox
+                  isSelected={plan.popular || false}
+                  onChange={(selected) => updatePlan(index, "popular", selected)}
+                >
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Checkbox.Content>
+                    <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer">Popular</Label>
+                  </Checkbox.Content>
+                </Checkbox>
               </div>
             </div>
             <Button

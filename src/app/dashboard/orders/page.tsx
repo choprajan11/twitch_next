@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { refreshUserOrderStatuses } from '@/lib/orderProcessor';
 import OrderStatusBadge from '@/components/dashboard/OrderStatusBadge';
+import CopyButton from '@/components/CopyButton';
 
 export const metadata = {
   title: 'My Orders - GrowTwitch',
@@ -44,7 +45,7 @@ export default async function DashboardOrdersPage() {
                 <th className="px-5 py-3 font-medium">Order ID</th>
                 <th className="px-5 py-3 font-medium">Service</th>
                 <th className="px-5 py-3 font-medium">Quantity</th>
-                <th className="px-5 py-3 font-medium">Start Count</th>
+                <th className="px-5 py-3 font-medium">Progress</th>
                 <th className="px-5 py-3 font-medium">Date</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium text-right">Price</th>
@@ -73,8 +74,17 @@ export default async function DashboardOrdersPage() {
               ) : (
                 orders.map((order) => (
                   <tr key={order.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                    <td className="px-5 py-4 font-mono text-xs text-zinc-900 dark:text-white">
-                      {order.oid || order.id.slice(0, 8)}
+                    <td className="px-5 py-4">
+                      <CopyButton text={order.oid || order.id} className="font-mono text-xs text-zinc-900 dark:text-white font-semibold">
+                        {order.oid || order.id.slice(0, 8)}
+                      </CopyButton>
+                      <div className="text-[10px] text-zinc-400 mt-1">
+                        {order.link && (
+                          <CopyButton text={order.link} className="text-[#9146FF]">
+                            @{order.link}
+                          </CopyButton>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       <p className="font-medium text-zinc-900 dark:text-white text-sm">{order.service.name}</p>
@@ -84,14 +94,25 @@ export default async function DashboardOrdersPage() {
                     </td>
                     <td className="px-5 py-4 text-zinc-600 dark:text-zinc-400 text-xs">
                       {order.startCount > 0 ? (
-                        <span>
-                          <span className="block">{order.startCount.toLocaleString()}</span>
-                          {["completed", "partial"].includes(order.status) && (
-                            <span className="text-green-500 font-medium">
-                              → {(order.startCount + order.quantity - order.remains).toLocaleString()}
-                            </span>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-zinc-500">Start:</span>
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300">{order.startCount.toLocaleString()}</span>
+                          </div>
+                          {["completed", "partial", "inprogress", "processing"].includes(order.status) && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-zinc-500">Now:</span>
+                              <span className="font-medium text-green-600 dark:text-green-400">
+                                {(order.startCount + order.quantity - order.remains).toLocaleString()}
+                              </span>
+                              <span className="text-[10px] text-green-500">
+                                (+{(order.quantity - order.remains).toLocaleString()})
+                              </span>
+                            </div>
                           )}
-                        </span>
+                        </div>
+                      ) : order.status === "pending" || order.status === "processing" ? (
+                        <span className="text-zinc-400 italic">Tracking...</span>
                       ) : (
                         <span className="text-zinc-400">—</span>
                       )}

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@heroui/react";
+import { Button, Checkbox, CheckboxGroup, RadioGroup, Radio, Label } from "@heroui/react";
 import { Suspense } from "react";
 import TwitchUsernameInput from "@/components/TwitchUsernameInput";
 import { getSessionEmail } from "@/lib/sessionClient";
+import { CHAT_CATEGORIES, CATEGORY_MESSAGES, type ChatCategory } from "@/lib/chatMessages";
 
 function CheckoutForm() {
   const searchParams = useSearchParams();
@@ -53,16 +54,17 @@ function CheckoutForm() {
   }, [serviceSlug, planId]);
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("stripe");
 
-  const chatCategories = [
-    { id: "random", label: "Random Chat Messages", desc: "~100 natural, varied messages", defaultOn: true },
-    { id: "hype", label: "Hype & Excitement", desc: "LET'S GO, POG, etc." },
-    { id: "reactions", label: "Reactions & Emotes", desc: "LUL, Kappa, KEKW, etc." },
-    { id: "questions", label: "Questions & Engagement", desc: "What game is next?, etc." },
-    { id: "compliments", label: "Compliments & Support", desc: "Great play!, Love the stream, etc." },
-    { id: "casual", label: "Casual Conversation", desc: "Hey chat, GGs, etc." },
-  ];
+  const chatCategories = Object.entries(CHAT_CATEGORIES).map(([id, { label, desc }]) => ({
+    id,
+    label,
+    desc,
+    defaultOn: id === "random",
+  }));
   const [selectedChatCategories, setSelectedChatCategories] = useState<string[]>(["random"]);
+  const [chatMode, setChatMode] = useState<"presets" | "custom">("presets");
+  const [viewingCategory, setViewingCategory] = useState<ChatCategory | null>(null);
 
   const isLinkService = serviceSlug?.includes("clip") || serviceSlug?.includes("video");
   const isChatbotService = serviceSlug?.includes("chat") || serviceSlug?.includes("bot");
@@ -86,7 +88,19 @@ function CheckoutForm() {
     const link = formData.get("link") as string;
     const email = formData.get("email") as string;
     const paymentMethod = formData.get("paymentMethod") as string;
-    const comments = formData.get("comments") as string;
+    const customMessages = formData.get("customMessages") as string;
+    
+    // For chatbot: use custom messages if provided, otherwise use category IDs
+    let comments: string | undefined;
+    if (isChatbotService) {
+      if (chatMode === "custom" && customMessages?.trim()) {
+        // Send custom messages prefixed with "custom:" so backend knows to use them directly
+        comments = `custom:${customMessages}`;
+      } else if (chatMode === "presets" && selectedChatCategories.length > 0) {
+        // Send category IDs prefixed with "categories:" 
+        comments = `categories:${selectedChatCategories.join(",")}`;
+      }
+    }
 
     try {
       const res = await fetch("/api/checkout", {
@@ -97,7 +111,8 @@ function CheckoutForm() {
           planId,
           link,
           email,
-          comments: comments || undefined,
+          comments,
+          agreedToTerms,
           paymentMethod: paymentMethod || "stripe",
         }),
       });
@@ -179,7 +194,7 @@ function CheckoutForm() {
                         name="link"
                         required
                         placeholder={serviceSlug?.includes("clip") ? "https://clips.twitch.tv/YourClipHere" : "https://twitch.tv/videos/123456789"}
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white"
                       />
                       <p className="text-xs font-medium text-zinc-500 mt-2">Paste the full link to your {serviceSlug?.includes("clip") ? "clip" : "video"}.</p>
                     </div>
@@ -190,56 +205,178 @@ function CheckoutForm() {
                   {isChatbotService && (
                     <div>
                       <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3">
-                        Chat Message Style
+                        Chat Messages
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {chatCategories.map((cat) => {
-                          const isSelected = selectedChatCategories.includes(cat.id);
-                          return (
-                            <label
-                              key={cat.id}
-                              className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                                isSelected
-                                  ? "border-[#9146FF] bg-[#9146FF]/5"
-                                  : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/30"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {
-                                  setSelectedChatCategories((prev) =>
-                                    isSelected ? prev.filter((c) => c !== cat.id) : [...prev, cat.id]
-                                  );
-                                }}
-                                className="mt-0.5 w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-[#9146FF] focus:ring-[#9146FF]"
-                              />
-                              <div className="min-w-0">
-                                <span className="text-sm font-semibold text-zinc-900 dark:text-white block">{cat.label}</span>
-                                <span className="text-xs text-zinc-500 dark:text-zinc-400">{cat.desc}</span>
-                              </div>
-                            </label>
-                          );
-                        })}
+                      
+                      {/* Tabs */}
+                      <div className="flex mb-4 bg-zinc-100 dark:bg-zinc-900/50 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => setChatMode("presets")}
+                          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
+                            chatMode === "presets"
+                              ? "bg-white dark:bg-zinc-800 text-[#9146FF] shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                          }`}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Preset Messages
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setChatMode("custom")}
+                          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
+                            chatMode === "custom"
+                              ? "bg-white dark:bg-zinc-800 text-[#9146FF] shadow-sm"
+                              : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                          }`}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Custom Messages
+                          </span>
+                        </button>
                       </div>
-                      <input type="hidden" name="comments" value={selectedChatCategories.join(",")} />
 
-                      <div className="mt-3">
-                        <details className="group">
-                          <summary className="text-xs font-medium text-[#9146FF] cursor-pointer hover:underline">
-                            Or enter custom messages instead
-                          </summary>
+                      {/* Presets Tab Content */}
+                      {chatMode === "presets" && (
+                        <div>
+                          <p className="text-xs text-zinc-500 mb-3">Select one or more message categories. Click &quot;View&quot; to preview messages.</p>
+                          <CheckboxGroup 
+                            value={selectedChatCategories} 
+                            onChange={(values) => setSelectedChatCategories(values as string[])}
+                            className="gap-0"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {chatCategories.map((cat) => {
+                                const isSelected = selectedChatCategories.includes(cat.id);
+                                const messageCount = CATEGORY_MESSAGES[cat.id as ChatCategory]?.length || 0;
+                                return (
+                                  <div
+                                    key={cat.id}
+                                    className={`rounded-xl border-2 transition-all ${
+                                      isSelected
+                                        ? "border-[#9146FF] bg-[#9146FF]/5"
+                                        : "border-[rgba(145,70,255,0.1)] bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/30"
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-3 p-3">
+                                      <Checkbox 
+                                        value={cat.id}
+                                        className="flex-1 min-w-0 items-start [&_[data-slot=control]]:mt-0.5"
+                                      >
+                                        <Checkbox.Control>
+                                          <Checkbox.Indicator />
+                                        </Checkbox.Control>
+                                        <Checkbox.Content>
+                                          <Label className="text-sm font-semibold text-zinc-900 dark:text-white leading-tight cursor-pointer">{cat.label}</Label>
+                                          <span className="text-xs text-zinc-500 dark:text-zinc-400 block">{cat.desc}</span>
+                                        </Checkbox.Content>
+                                      </Checkbox>
+                                      <button
+                                        type="button"
+                                        onClick={() => setViewingCategory(cat.id as ChatCategory)}
+                                        className="px-2 py-1 text-[10px] font-bold text-[#9146FF] bg-[#9146FF]/10 rounded-md hover:bg-[#9146FF]/20 transition-colors shrink-0"
+                                      >
+                                        View ({messageCount})
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CheckboxGroup>
+                          {selectedChatCategories.length === 0 && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                              Please select at least one category
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Custom Tab Content */}
+                      {chatMode === "custom" && (
+                        <div>
+                          <p className="text-xs text-zinc-500 mb-3">Enter your own custom messages, one per line. Minimum 5 messages recommended.</p>
                           <textarea
                             id="customMessages"
                             name="customMessages"
-                            rows={3}
-                            placeholder={"Enter custom chat messages, one per line..."}
-                            className="mt-2 w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white resize-none"
+                            rows={6}
+                            placeholder={"Enter your custom chat messages here...\n\nExamples:\nLET'S GOOO!\nGreat stream!\nYou're so good at this\nLove the content\nKeep up the great work"}
+                            className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white resize-none"
                           />
-                          <p className="text-xs font-medium text-zinc-500 mt-1">One message per line. Overrides selected categories above.</p>
-                        </details>
-                      </div>
+                          <p className="text-xs font-medium text-zinc-500 mt-2">
+                            One message per line. More variety = more natural chat experience.
+                          </p>
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  {/* View Messages Modal */}
+                  {viewingCategory && (
+                    <>
+                      <div 
+                        className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+                        onClick={() => setViewingCategory(null)}
+                      />
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[70vh] flex flex-col overflow-hidden">
+                          <div className="p-5 flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+                                {CHAT_CATEGORIES[viewingCategory].label}
+                              </h3>
+                              <p className="text-xs text-zinc-500 mt-0.5">
+                                {CATEGORY_MESSAGES[viewingCategory]?.length || 0} messages in this category
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setViewingCategory(null)}
+                              className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="flex-1 overflow-y-auto px-5 pb-2">
+                            <div className="space-y-2">
+                              {CATEGORY_MESSAGES[viewingCategory]?.map((msg, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-700 dark:text-zinc-300"
+                                >
+                                  {msg}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="p-5 pt-3">
+                            <Button
+                              type="button"
+                              onPress={() => {
+                                if (!selectedChatCategories.includes(viewingCategory)) {
+                                  setSelectedChatCategories(prev => [...prev, viewingCategory]);
+                                }
+                                setViewingCategory(null);
+                              }}
+                              className="w-full bg-[#9146FF] text-white font-semibold rounded-xl"
+                            >
+                              {selectedChatCategories.includes(viewingCategory) ? "Close" : "Add This Category"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   <div>
@@ -260,7 +397,7 @@ function CheckoutForm() {
                       defaultValue={sessionEmail || ""}
                       readOnly={!!sessionEmail}
                       placeholder="you@example.com"
-                      className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white ${sessionEmail ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white ${sessionEmail ? "opacity-70 cursor-not-allowed" : ""}`}
                     />
                     <p className="text-xs font-medium text-zinc-500 mt-2">We&apos;ll create a dashboard for you to track your order.</p>
                   </div>
@@ -275,35 +412,67 @@ function CheckoutForm() {
                   </h2>
                 </div>
                 <div className="p-6">
-                  <div className="space-y-3">
-                    <label className="flex items-center justify-between p-4 border-2 border-[#9146FF] bg-[#9146FF]/5 rounded-xl cursor-pointer transition-all">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="paymentMethod" value="stripe" defaultChecked className="w-4 h-4 text-[#9146FF] focus:ring-[#9146FF]" />
-                        <span className="font-bold text-zinc-900 dark:text-white">Credit / Debit Card</span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <div className="w-9 h-6 bg-[#1a1f36] rounded border border-zinc-700 text-[9px] text-white flex items-center justify-center font-bold">VISA</div>
-                        <div className="w-9 h-6 bg-[#1a1f36] rounded border border-zinc-700 text-[9px] text-white flex items-center justify-center font-bold">MC</div>
-                      </div>
-                    </label>
-                    <label className="flex items-center justify-between p-4 border-2 border-transparent bg-zinc-50 dark:bg-zinc-900/50 rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="paymentMethod" value="crypto" className="w-4 h-4 text-[#9146FF] focus:ring-[#9146FF]" />
-                        <span className="font-bold text-zinc-900 dark:text-white">Cryptocurrency</span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <div className="w-9 h-6 bg-[#f7931a] rounded text-[9px] text-white flex items-center justify-center font-bold">BTC</div>
-                        <div className="w-9 h-6 bg-[#627eea] rounded text-[9px] text-white flex items-center justify-center font-bold">ETH</div>
-                      </div>
-                    </label>
-                    <label className="flex items-center justify-between p-4 border-2 border-transparent bg-zinc-50 dark:bg-zinc-900/50 rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="paymentMethod" value="wallet" className="w-4 h-4 text-[#9146FF] focus:ring-[#9146FF]" />
-                        <span className="font-bold text-zinc-900 dark:text-white">Wallet Balance</span>
-                      </div>
-                      <div className="text-xs font-bold text-green-500">Pay with funds</div>
-                    </label>
-                  </div>
+                  <RadioGroup 
+                    value={paymentMethod} 
+                    onChange={setPaymentMethod}
+                    name="paymentMethod"
+                    className="gap-3"
+                  >
+                    <Radio 
+                      value="stripe"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all w-full m-0 ${
+                        paymentMethod === "stripe" 
+                          ? "border-[#9146FF] bg-[#9146FF]/5" 
+                          : "border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <Radio.Control>
+                        <Radio.Indicator />
+                      </Radio.Control>
+                      <Radio.Content className="flex-1 flex items-center justify-between">
+                        <Label className="font-bold text-zinc-900 dark:text-white cursor-pointer">Credit / Debit Card</Label>
+                        <div className="flex gap-1.5">
+                          <div className="w-9 h-6 bg-[#1a1f36] rounded border border-zinc-700 text-[9px] text-white flex items-center justify-center font-bold">VISA</div>
+                          <div className="w-9 h-6 bg-[#1a1f36] rounded border border-zinc-700 text-[9px] text-white flex items-center justify-center font-bold">MC</div>
+                        </div>
+                      </Radio.Content>
+                    </Radio>
+                    <Radio 
+                      value="crypto"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all w-full m-0 ${
+                        paymentMethod === "crypto" 
+                          ? "border-[#9146FF] bg-[#9146FF]/5" 
+                          : "border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <Radio.Control>
+                        <Radio.Indicator />
+                      </Radio.Control>
+                      <Radio.Content className="flex-1 flex items-center justify-between">
+                        <Label className="font-bold text-zinc-900 dark:text-white cursor-pointer">Cryptocurrency</Label>
+                        <div className="flex gap-1.5">
+                          <div className="w-9 h-6 bg-[#f7931a] rounded text-[9px] text-white flex items-center justify-center font-bold">BTC</div>
+                          <div className="w-9 h-6 bg-[#627eea] rounded text-[9px] text-white flex items-center justify-center font-bold">ETH</div>
+                        </div>
+                      </Radio.Content>
+                    </Radio>
+                    <Radio 
+                      value="wallet"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all w-full m-0 ${
+                        paymentMethod === "wallet" 
+                          ? "border-[#9146FF] bg-[#9146FF]/5" 
+                          : "border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      }`}
+                    >
+                      <Radio.Control>
+                        <Radio.Indicator />
+                      </Radio.Control>
+                      <Radio.Content className="flex-1 flex items-center justify-between">
+                        <Label className="font-bold text-zinc-900 dark:text-white cursor-pointer">Wallet Balance</Label>
+                        <div className="text-xs font-bold text-green-500">Pay with funds</div>
+                      </Radio.Content>
+                    </Radio>
+                  </RadioGroup>
                 </div>
               </div>
             </div>
@@ -339,25 +508,28 @@ function CheckoutForm() {
                         <span className="text-4xl font-black text-[#9146FF]">${securePrice}</span>
                       )}
                     </div>
-                    <label className="flex items-start gap-3 mb-5 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-[#9146FF] focus:ring-[#9146FF] cursor-pointer"
-                      />
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        I agree to the{" "}
-                        <a href="/terms" target="_blank" className="text-[#9146FF] hover:underline font-medium">
-                          Terms of Service
-                        </a>{" "}
-                        and{" "}
-                        <a href="/refund-policy" target="_blank" className="text-[#9146FF] hover:underline font-medium">
-                          Refund Policy
-                        </a>
-                        . I understand that results may vary and delivery times are estimates.
-                      </span>
-                    </label>
+                    <Checkbox 
+                      isSelected={agreedToTerms}
+                      onChange={setAgreedToTerms}
+                      className="mb-5 items-start [&_[data-slot=control]]:mt-0.5"
+                    >
+                      <Checkbox.Control>
+                        <Checkbox.Indicator />
+                      </Checkbox.Control>
+                      <Checkbox.Content>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                          I agree to the{" "}
+                          <a href="/terms" target="_blank" className="text-[#9146FF] hover:underline font-medium">
+                            Terms of Service
+                          </a>{" "}
+                          and{" "}
+                          <a href="/refund-policy" target="_blank" className="text-[#9146FF] hover:underline font-medium">
+                            Refund Policy
+                          </a>
+                          . I understand that results may vary and delivery times are estimates.
+                        </span>
+                      </Checkbox.Content>
+                    </Checkbox>
                     <Button
                       type="submit"
                       isDisabled={isSubmitting || !canSubmit}

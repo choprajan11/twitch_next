@@ -6,6 +6,11 @@
 [data-theme="light"] {
   color-scheme: light;
   
+  /* HeroUI v3 accent color (Twitch purple) */
+  --accent: oklch(0.55 0.25 285);
+  --accent-foreground: oklch(1 0 0);
+  --focus: var(--accent);
+  
   --background: #f0f0ff;
   --foreground: #171717;
   --bento-bg: #e8e8ff;
@@ -31,6 +36,11 @@
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
+  
+  /* HeroUI v3 accent color (Twitch purple) */
+  --accent: oklch(0.65 0.22 285);
+  --accent-foreground: oklch(1 0 0);
+  --focus: var(--accent);
   
   --background: #0a0a12;
   --foreground: #ededed;
@@ -192,3 +202,15 @@ body {
 [data-theme="light"] .bento-card-static {
   border-color: rgba(145, 70, 255, 0.1);
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
