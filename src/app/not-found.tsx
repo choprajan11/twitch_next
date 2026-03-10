@@ -51,9 +51,7 @@ export default function NotFound() {
             <Link href="/">
               <Button
                 size="lg"
-                style={{ backgroundColor: "#9146FF", color: "white" }}
-                variant="primary"
-                className="font-bold px-8 h-12 shadow-[#9146FF]/30"
+                className="btn-primary font-bold px-8 h-12"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +90,7 @@ export default function NotFound() {
             <div className="flex flex-wrap justify-center gap-3">
               {[
                 { label: "Services", href: "/#services" },
-                { label: "Pricing", href: "/pricing" },
+                { label: "Services", href: "/#services" },
                 { label: "Track Order", href: "/orders" },
                 { label: "FAQ", href: "/faq" },
               ].map((link) => (

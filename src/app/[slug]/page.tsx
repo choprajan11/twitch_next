@@ -347,7 +347,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                 </h2>
               </div>
               <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {plans.map((plan) => (
                     <Link
                       key={plan.id}
@@ -357,12 +357,16 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                       <div
                         className={`relative p-4 rounded-xl border-2 transition-all h-full flex flex-col ${
                           plan.popular
-                            ? "border-[#9146FF] bg-[#9146FF]/5"
-                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/50"
+                            ? ""
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
                         }`}
+                        style={plan.popular ? { borderColor: content.color, backgroundColor: `${content.color}0d` } : {}}
                       >
                         {plan.popular && (
-                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#9146FF] to-cyan-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                          <div
+                            className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap"
+                            style={{ backgroundColor: content.color }}
+                          >
                             Popular
                           </div>
                         )}
@@ -375,7 +379,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                             className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all ${
                               plan.popular
                                 ? "text-white shadow-md"
-                                : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 group-hover/plan:bg-[#9146FF]/10 group-hover/plan:text-[#9146FF]"
+                                : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                             }`}
                             style={plan.popular ? { backgroundColor: content.color, boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
                           >
@@ -553,9 +557,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <Link href={`/${service.slug}#`}>
               <Button
                 size="lg"
-                variant="primary"
-                className="font-bold px-10 h-14 text-lg"
-                style={{ backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` }}
+                className="btn-primary font-bold px-10 h-14 text-lg"
               >
                 Choose Your Package
               </Button>

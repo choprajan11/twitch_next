@@ -151,12 +151,6 @@ export function Navbar() {
                 </Link>
                 <ServicesDropdown />
                 <Link
-                  href="/pricing"
-                  className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
-                >
-                  Pricing
-                </Link>
-                <Link
                   href="/orders"
                   className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
                 >
@@ -234,17 +228,6 @@ export function Navbar() {
           >
             <span className="flex h-2 w-2 rounded-full bg-pink-500 animate-pulse"></span>
             Free Trial
-          </Link>
-
-          <Link
-            href="/pricing"
-            onClick={closeMenu}
-            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            Pricing
           </Link>
 
           <Link
