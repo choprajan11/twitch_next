@@ -227,7 +227,7 @@ export async function POST(req: Request) {
 
     if (gateway === "crypto") {
       return NextResponse.json({
-        url: "/checkout/failed?reason=crypto_coming_soon",
+        url: `/checkout/failed?reason=crypto_coming_soon&service=${service.slug}`,
       });
     }
 
