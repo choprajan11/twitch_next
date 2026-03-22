@@ -3,6 +3,7 @@ import {
   sendPendingOrders,
   updateProcessingOrders,
   cleanupStalePaymentOrders,
+  cancelStalePendingOrders,
 } from "@/lib/orderProcessor";
 
 export async function GET(req: Request) {
@@ -14,10 +15,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [updated, cleaned, retried] = await Promise.all([
+    const [updated, cleaned, retried, cancelledPending] = await Promise.all([
       updateProcessingOrders(),
       cleanupStalePaymentOrders(),
       sendPendingOrders(),
+      cancelStalePendingOrders(),
     ]);
 
     return NextResponse.json({
@@ -25,6 +27,7 @@ export async function GET(req: Request) {
       updated,
       cleaned,
       retried,
+      cancelledPending,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

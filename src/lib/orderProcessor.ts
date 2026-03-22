@@ -460,14 +460,63 @@ export async function updateProcessingOrders(): Promise<number> {
   return orders.length;
 }
 
+export async function cancelStalePendingOrders(): Promise<number> {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const staleOrders = await prisma.order.findMany({
+    where: {
+      status: "pending",
+      apiOrderId: null,
+      createdAt: { lt: twentyFourHoursAgo },
+    },
+    select: { id: true, userId: true, price: true, quantity: true, oid: true },
+  });
+
+  if (staleOrders.length === 0) return 0;
+
+  for (const order of staleOrders) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: "cancelled", log: "Auto-cancelled: pending for over 24 hours" },
+        });
+
+        if (order.price > 0) {
+          const user = await tx.user.findUnique({ where: { id: order.userId } });
+          if (user) {
+            await tx.user.update({
+              where: { id: order.userId },
+              data: { funds: { increment: order.price } },
+            });
+            await tx.fundLog.create({
+              data: {
+                userId: order.userId,
+                type: "refund",
+                amount: order.price,
+                oldFunds: user.funds,
+                newFunds: user.funds + order.price,
+                note: `Auto-cancel refund: Order ${order.oid || order.id}`,
+              },
+            });
+          }
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to cancel stale order ${order.id}:`, error);
+    }
+  }
+
+  return staleOrders.length;
+}
+
 export async function cleanupStalePaymentOrders(): Promise<number> {
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const result = await prisma.order.deleteMany({
     where: {
       status: "payment",
-      createdAt: { lt: oneMonthAgo },
+      createdAt: { lt: twentyFourHoursAgo },
     },
   });
 

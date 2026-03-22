@@ -31,23 +31,30 @@ const serviceIcons: Record<string, React.ReactNode> = {
       <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
     </svg>
   ),
+  video: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline>
+    </svg>
+  ),
 };
 
 function getIcon(slug: string) {
   const lower = slug.toLowerCase();
   if (lower.includes("follower")) return serviceIcons.follower;
-  if (lower.includes("viewer") && !lower.includes("clip")) return serviceIcons.viewer;
+  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return serviceIcons.viewer;
   if (lower.includes("chat") || lower.includes("bot")) return serviceIcons.chat;
   if (lower.includes("clip")) return serviceIcons.clip;
+  if (lower.includes("video")) return serviceIcons.video;
   return serviceIcons.follower;
 }
 
 function getColor(slug: string) {
   const lower = slug.toLowerCase();
   if (lower.includes("follower")) return "#9146FF";
-  if (lower.includes("viewer") && !lower.includes("clip")) return "#06b6d4";
+  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return "#06b6d4";
   if (lower.includes("chat") || lower.includes("bot")) return "#22c55e";
   if (lower.includes("clip")) return "#ec4899";
+  if (lower.includes("video")) return "#f59e0b";
   return "#9146FF";
 }
 

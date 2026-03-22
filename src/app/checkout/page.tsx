@@ -12,6 +12,7 @@ import {
 } from "@heroui/react";
 import { Suspense } from "react";
 import TwitchUsernameInput from "@/components/TwitchUsernameInput";
+import TwitchLinkInput from "@/components/TwitchLinkInput";
 import { getSessionEmail } from "@/lib/sessionClient";
 import {
   CHAT_CATEGORIES,
@@ -26,6 +27,12 @@ type Plan = {
   quantity?: number;
   duration?: number;
   popular?: boolean;
+  frequency?: "daily" | "weekly" | "monthly";
+};
+
+type AddonConfig = {
+  quantity: number;
+  price: number;
 };
 
 function getServiceTheme(slug: string | null) {
@@ -86,6 +93,9 @@ function CheckoutForm() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPlanDropdown, setShowPlanDropdown] = useState(false);
 
+  const [addonConfig, setAddonConfig] = useState<AddonConfig | null>(null);
+  const [addonSelected, setAddonSelected] = useState(false);
+
   const [selectedChatCategories, setSelectedChatCategories] = useState<string[]>(["random"]);
   const [chatMode, setChatMode] = useState<"presets" | "custom">("presets");
   const [viewingCategory, setViewingCategory] = useState<ChatCategory | null>(null);
@@ -98,7 +108,17 @@ function CheckoutForm() {
   const currentPlan = allPlans.find((p) => p.id === selectedPlanId) || null;
   const serviceName = resolvedServiceName || "Service";
   const planName = currentPlan?.name || "Selected Plan";
-  const price = currentPlan?.price || 0;
+  const basePrice = currentPlan?.price || 0;
+  const addonPrice = addonSelected && addonConfig ? addonConfig.price : 0;
+  let price = basePrice + addonPrice;
+  
+  // Apply visual discounts based on payment method
+  if (paymentMethod === "crypto") {
+    price = price * 0.7; // 30% discount
+  } else if (paymentMethod === "stripe") {
+    price = price * 0.85; // 15% discount
+  }
+  
   const securePrice = price.toFixed(2);
   const displayQuantity = currentPlan?.quantity || currentPlan?.duration || null;
   const quantityUnit = getQuantityUnit(serviceType, serviceSlug);
@@ -132,6 +152,13 @@ function CheckoutForm() {
           setAllPlans(plans);
           if (planId && !plans.find((p) => p.id === planId) && plans.length > 0) {
             setSelectedPlanId(plans[0].id);
+          }
+        }
+        const cfg = data.config as Record<string, unknown> | null;
+        if (cfg?.addon && typeof cfg.addon === "object") {
+          const a = cfg.addon as { quantity?: number; price?: number };
+          if (a.quantity && a.quantity > 0 && a.price && a.price > 0) {
+            setAddonConfig({ quantity: a.quantity, price: a.price });
           }
         }
       })
@@ -208,7 +235,7 @@ function CheckoutForm() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceSlug, planId: selectedPlanId, link, email, comments, agreedToTerms, paymentMethod }),
+        body: JSON.stringify({ serviceSlug, planId: selectedPlanId, link, email, comments, agreedToTerms, paymentMethod, addon: addonSelected }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Something went wrong"); setShowPaymentModal(false); setIsSubmitting(false); return; }
@@ -296,17 +323,34 @@ function CheckoutForm() {
                   )}
 
                   {isLinkService ? (
-                    <div>
-                      <label htmlFor="link" className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                        {serviceSlug?.includes("clip") ? "Twitch Clip Link" : "Twitch Video Link"}
-                      </label>
-                      <input type="text" id="link" name="link" required
-                        placeholder={serviceSlug?.includes("clip") ? "https://clips.twitch.tv/YourClipHere" : "https://twitch.tv/videos/123456789"}
-                        className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white"
-                      />
-                    </div>
+                    <TwitchLinkInput
+                      linkType={serviceSlug?.includes("clip") ? "clip" : "video"}
+                    />
                   ) : (
                     <TwitchUsernameInput />
+                  )}
+
+                  {addonConfig && !isLoading && (
+                    <div
+                      onClick={() => setAddonSelected(!addonSelected)}
+                      className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        addonSelected
+                          ? "border-green-500 bg-green-500/5"
+                          : "border-[rgba(145,70,255,0.1)] bg-zinc-50 dark:bg-zinc-900/50 hover:border-green-500/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox isSelected={addonSelected} onChange={setAddonSelected} className="[&_[data-slot=control]]:mt-0">
+                          <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                        </Checkbox>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-green-500 text-white uppercase tracking-wide">Offer</span>
+                            Add {addonConfig.quantity.toLocaleString()} more {quantityUnit} for just ${addonConfig.price.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   {isChatbotService && (
@@ -414,6 +458,7 @@ function CheckoutForm() {
                               >
                                 <span className="flex items-center gap-2">
                                   <span className="font-semibold">{plan.name}</span>
+                                  {plan.frequency && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500 text-white capitalize">{plan.frequency}</span>}
                                   {plan.popular && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.color }}>Popular</span>}
                                 </span>
                                 <span className="font-bold">${plan.price.toFixed(2)}</span>
@@ -431,7 +476,12 @@ function CheckoutForm() {
                   {!isLoading && displayQuantity != null && quantityUnit && (
                     <div className="flex justify-between items-center text-sm mb-3">
                       <span className="text-zinc-500 text-xs font-medium">Quantity</span>
-                      <span className="font-bold text-xs text-zinc-900 dark:text-white">{displayQuantity.toLocaleString()} {quantityUnit}</span>
+                      <span className="font-bold text-xs text-zinc-900 dark:text-white flex items-center gap-1.5">
+                        {displayQuantity.toLocaleString()} {quantityUnit}
+                        {currentPlan?.frequency && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500 text-white capitalize">{currentPlan.frequency}</span>
+                        )}
+                      </span>
                     </div>
                   )}
 
@@ -450,12 +500,30 @@ function CheckoutForm() {
                   <div className="border-t pt-3 mt-1 space-y-1.5" style={{ borderColor: `${theme.color}12` }}>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">Subtotal</span>
-                      {isLoading ? <span className="w-14 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" /> : <span className="font-semibold text-zinc-700 dark:text-zinc-300">${securePrice}</span>}
+                      {isLoading ? <span className="w-14 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" /> : <span className="font-semibold text-zinc-700 dark:text-zinc-300">${basePrice.toFixed(2)}</span>}
                     </div>
+                    {addonSelected && addonConfig && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-green-600 dark:text-green-400 font-medium">+ {addonConfig.quantity.toLocaleString()} {quantityUnit}</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">+${addonConfig.price.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-zinc-500">Processing Fee</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">Free</span>
                     </div>
+                    {paymentMethod === "crypto" && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-green-600 dark:text-green-400 font-medium">Crypto Discount (30%)</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">-${((basePrice + addonPrice) * 0.3).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {paymentMethod === "stripe" && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-green-600 dark:text-green-400 font-medium">Card Discount (15%)</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">-${((basePrice + addonPrice) * 0.15).toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Total */}
@@ -551,7 +619,7 @@ function CheckoutForm() {
                     </div>
                     <div className="flex-1 text-left">
                       <p className={`text-sm font-semibold ${paymentMethod === "stripe" ? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"}`}>Credit / Debit Card</p>
-                      <p className="text-[10px] text-zinc-500">Visa, Mastercard, Amex</p>
+                      <p className="text-[10px] text-green-500 font-bold">15% Discount</p>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "stripe" ? "border-[#9146FF] bg-[#9146FF]" : "border-zinc-300 dark:border-zinc-600"}`}>
                       {paymentMethod === "stripe" && <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -604,17 +672,20 @@ function CheckoutForm() {
                     )}
                   </div>
 
-                  {/* Crypto — Disabled */}
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-800/30 opacity-40 cursor-not-allowed">
-                    <div className="w-9 h-9 rounded-lg bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                  {/* Crypto */}
+                  <button type="button" onClick={() => setPaymentMethod("crypto")}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${paymentMethod === "crypto" ? "ring-2 bg-green-50/50 dark:bg-green-900/10" : "bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100/50 dark:hover:bg-zinc-700/30"}`}
+                    style={paymentMethod === "crypto" ? { ringColor: theme.color, borderColor: theme.color } : {}}
+                  >
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: paymentMethod === "crypto" ? `${theme.color}15` : undefined }} >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "crypto" ? "text-green-600" : "text-zinc-400"}><circle cx="12" cy="12" r="10" /><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5a1.5 1.5 0 0 1 0 3H9" /></svg>
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-zinc-400">Cryptocurrency</p>
-                      <p className="text-[10px] text-zinc-400">BTC, ETH, USDT</p>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">Cryptocurrency</p>
+                      <p className="text-[10px] text-zinc-500">BTC, ETH, USDT & more</p>
                     </div>
-                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-500">Soon</span>
-                  </div>
+                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">-30%</span>
+                  </button>
                 </div>
 
                 {/* CTA */}

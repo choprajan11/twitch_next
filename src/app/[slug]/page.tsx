@@ -182,53 +182,62 @@ function getServiceContent(slug: string, name: string): ServiceContent {
     };
   }
 
-  if (lower.includes("clip")) {
+  if (lower.includes("clip") || lower.includes("video")) {
+    const isVideo = lower.includes("video");
+    const itemType = isVideo ? "video" : "clip";
+    const itemTypeCapitalized = isVideo ? "Video" : "Clip";
+    
     return {
-      icon: (
+      icon: isVideo ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+          <polyline points="17 2 12 7 7 2"></polyline>
+        </svg>
+      ) : (
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
         </svg>
       ),
-      color: "#ec4899",
-      gradient: "from-pink-500 to-rose-500",
-      metaTitle: `Buy ${name} - Viral Twitch Clips | GrowTwitch`,
+      color: isVideo ? "#f59e0b" : "#ec4899",
+      gradient: isVideo ? "from-amber-500 to-orange-500" : "from-pink-500 to-rose-500",
+      metaTitle: `Buy ${name} - Viral Twitch ${itemTypeCapitalized}s | GrowTwitch`,
       metaDesc: `Buy ${name.toLowerCase()} to make your best Twitch moments go viral. Fast delivery, real-looking views, and 30-day guarantee on every order.`,
-      heroSubtitle: `Make your best Twitch moments go viral. Boost your clip views to increase visibility across Twitch and social media, and attract new viewers to your channel.`,
+      heroSubtitle: `Make your best Twitch moments go viral. Boost your ${itemType} views to increase visibility across Twitch and social media, and attract new viewers to your channel.`,
       benefits: [
-        { title: "Make Clips Go Viral", desc: "High view counts signal to Twitch's algorithm that your clip is worth sharing. This increases the chance of your clip appearing in recommended sections, top clips, and discovery feeds—exposing your content to thousands of potential new followers." },
-        { title: "Extend Your Reach Beyond Streams", desc: "Clips live on after your stream ends. A viral clip continues attracting viewers to your channel 24/7, even when you're offline. Boosted clips work as permanent marketing assets that keep driving traffic to your profile." },
-        { title: "Enhance Social Media Sharing", desc: "When you share clips on Twitter, Reddit, or Discord, the view count adds credibility. A clip with thousands of views gets more clicks and shares than one with a handful, creating a multiplier effect across every platform you post on." },
-        { title: "Stand Out in Your Community", desc: "Top clips in any game category get featured prominently on Twitch. Higher view counts push your clips into these featured spots, putting your brand in front of the entire community for your game or niche." },
+        { title: `Make ${itemTypeCapitalized}s Go Viral`, desc: `High view counts signal to Twitch's algorithm that your ${itemType} is worth sharing. This increases the chance of your ${itemType} appearing in recommended sections, exposing your content to thousands of potential new followers.` },
+        { title: "Extend Your Reach Beyond Streams", desc: `${itemTypeCapitalized}s live on after your stream ends. A viral ${itemType} continues attracting viewers to your channel 24/7, even when you're offline. Boosted ${itemType}s work as permanent marketing assets.` },
+        { title: "Enhance Social Media Sharing", desc: `When you share ${itemType}s on Twitter, Reddit, or Discord, the view count adds credibility. A ${itemType} with thousands of views gets more clicks and shares than one with a handful.` },
+        { title: "Stand Out in Your Community", desc: `Top ${itemType}s in any game category get featured prominently on Twitch. Higher view counts push your ${itemType}s into these featured spots, putting your brand in front of the entire community.` },
       ],
       howItWorks: [
-        "Pick the clip views package that matches your goals.",
-        "Paste the link to your Twitch clip—no account access needed.",
+        `Pick the ${itemType} views package that matches your goals.`,
+        `Paste the link to your Twitch ${itemType}—no account access needed.`,
         "Complete your secure payment via Stripe or cryptocurrency.",
-        "Views start rolling in within minutes, boosting your clip's visibility.",
+        `Views start rolling in within minutes, boosting your ${itemType}'s visibility.`,
       ],
       seoBlocks: [
         {
-          heading: "Why Buy Twitch Clip Views?",
-          text: "Twitch clips are one of the most powerful growth tools available to streamers, but only if people actually see them. A brilliant clip with 50 views gets buried and forgotten. That same clip with 10,000 views gets recommended by Twitch, shared on social media, and can single-handedly bring hundreds of new followers to your channel.\n\nBuying clip views gives your best moments the initial traction they need to reach a wider audience. Twitch's recommendation engine prioritizes clips with higher engagement, meaning more views lead to more organic views in a compounding effect. It's the most cost-effective way to turn your stream highlights into genuine growth engines for your channel."
+          heading: `Why Buy Twitch ${itemTypeCapitalized} Views?`,
+          text: `Twitch ${itemType}s are one of the most powerful growth tools available to streamers, but only if people actually see them. A brilliant ${itemType} with 50 views gets buried and forgotten. That same ${itemType} with 10,000 views gets recommended by Twitch, shared on social media, and can single-handedly bring hundreds of new followers to your channel.\n\nBuying ${itemType} views gives your best moments the initial traction they need to reach a wider audience. Twitch's recommendation engine prioritizes ${itemType}s with higher engagement, meaning more views lead to more organic views in a compounding effect.`
         },
         {
-          heading: "How Clip Views Drive Channel Growth",
-          text: "Unlike followers or viewers that benefit you during live streams, clip views work around the clock. A popular clip continues to attract attention days, weeks, and even months after it was created. When someone discovers an entertaining clip, their natural next action is to visit your channel profile, check out your stream schedule, and follow for future content.\n\nThis makes clip views one of the highest-ROI investments you can make in your channel. Each boosted clip becomes a permanent marketing asset in your content library. Streamers who consistently boost their best clips see a steady stream of new followers arriving from clip discovery, even during periods when they're not actively streaming."
+          heading: `How ${itemTypeCapitalized} Views Drive Channel Growth`,
+          text: `Unlike followers or viewers that benefit you during live streams, ${itemType} views work around the clock. A popular ${itemType} continues to attract attention days, weeks, and even months after it was created. When someone discovers an entertaining ${itemType}, their natural next action is to visit your channel profile, check out your stream schedule, and follow for future content.\n\nThis makes ${itemType} views one of the highest-ROI investments you can make in your channel. Each boosted ${itemType} becomes a permanent marketing asset in your content library.`
         },
         {
-          heading: "Getting the Most from Clip Views",
-          text: "Focus on boosting your best, most shareable clips. Funny moments, incredible plays, unexpected reactions, and emotional highlights tend to perform best. Don't waste views on average content—save your investment for the clips that truly represent your best moments and personality as a streamer.\n\nCombine clip view purchases with social media promotion for maximum impact. Boost a clip's views, then share it on Twitter, Reddit, TikTok, and Discord. The high view count adds social proof when people encounter your clip on these platforms, dramatically increasing click-through rates and follow conversions."
+          heading: `Getting the Most from ${itemTypeCapitalized} Views`,
+          text: `Focus on boosting your best, most shareable ${itemType}s. Funny moments, incredible plays, unexpected reactions, and emotional highlights tend to perform best. Don't waste views on average content—save your investment for the ${itemType}s that truly represent your best moments and personality as a streamer.\n\nCombine ${itemType} view purchases with social media promotion for maximum impact. Boost a ${itemType}'s views, then share it on Twitter, Reddit, TikTok, and Discord.`
         },
       ],
       faqs: [
-        { q: "How do I provide my clip?", a: "Simply paste the URL of your Twitch clip during checkout. You can find the clip URL by right-clicking on any clip on Twitch and selecting 'Copy Link'. No account access or password is needed." },
-        { q: "How fast are clip views delivered?", a: "Views typically begin delivering within 5-10 minutes of order confirmation. Most packages complete within 1-24 hours depending on the size, with gradual delivery for natural-looking growth." },
-        { q: "Can I boost multiple clips?", a: "Yes! You can place separate orders for different clips. Many streamers boost their top 3-5 clips per week to maintain a strong clip portfolio that consistently drives new followers." },
-        { q: "Will the views drop over time?", a: "Our clip views have excellent retention rates. In the rare case that any views drop within 30 days of purchase, our refill guarantee ensures they're replaced at no extra cost." },
-        { q: "Can people see who viewed my clip?", a: "No. Twitch does not display individual viewer identities on clips. Only the total view count is visible, so there's no way to distinguish purchased views from organic ones." },
-        { q: "Does this work for old clips too?", a: "Absolutely! You can boost any existing clip regardless of when it was created. Reviving an older clip with fresh views can bring it back into Twitch's recommendation engine." },
-        { q: "Will more views help my clip get featured?", a: "Yes. Twitch's algorithm considers view count and engagement velocity when deciding which clips to feature in category top clips, discovery feeds, and recommendations. Higher views significantly increase your chances of being featured." },
-        { q: "Is buying clip views safe for my account?", a: "Completely safe. We only need the clip URL—no account credentials, no login access. The views are delivered through safe methods that look identical to organic viewing patterns." },
+        { q: `How do I provide my ${itemType}?`, a: `Simply paste the URL of your Twitch ${itemType} during checkout. You can find the URL by right-clicking on any ${itemType} on Twitch and selecting 'Copy Link'. No account access or password is needed.` },
+        { q: `How fast are ${itemType} views delivered?`, a: "Views typically begin delivering within 5-10 minutes of order confirmation. Most packages complete within 1-24 hours depending on the size, with gradual delivery for natural-looking growth." },
+        { q: `Can I boost multiple ${itemType}s?`, a: `Yes! You can place separate orders for different ${itemType}s. Many streamers boost their top 3-5 ${itemType}s per week to maintain a strong portfolio that consistently drives new followers.` },
+        { q: "Will the views drop over time?", a: "Our views have excellent retention rates. In the rare case that any views drop within 30 days of purchase, our refill guarantee ensures they're replaced at no extra cost." },
+        { q: `Can people see who viewed my ${itemType}?`, a: "No. Twitch does not display individual viewer identities on clips or videos. Only the total view count is visible, so there's no way to distinguish purchased views from organic ones." },
+        { q: `Does this work for old ${itemType}s too?`, a: `Absolutely! You can boost any existing ${itemType} regardless of when it was created. Reviving an older ${itemType} with fresh views can bring it back into Twitch's recommendation engine.` },
+        { q: `Will more views help my ${itemType} get featured?`, a: `Yes. Twitch's algorithm considers view count and engagement velocity when deciding which ${itemType}s to feature in category top lists, discovery feeds, and recommendations.` },
+        { q: `Is buying ${itemType} views safe for my account?`, a: `Completely safe. We only need the ${itemType} URL—no account credentials, no login access. The views are delivered through safe methods that look identical to organic viewing patterns.` },
       ],
     };
   }

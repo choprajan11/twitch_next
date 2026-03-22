@@ -9,7 +9,7 @@ export async function GET(
 
   const service = await prisma.service.findUnique({
     where: { slug },
-    select: { name: true, slug: true, plans: true, type: true },
+    select: { name: true, slug: true, plans: true, type: true, config: true },
   });
 
   if (!service) {

@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { isDisposableEmail, rateLimit } from "@/lib/security";
 import { processOrderImmediately } from "@/lib/orderProcessor";
 import { processStripeRequest } from "@/lib/stripe";
+import { createOxaPayInvoice } from "@/lib/oxapay";
 import { logSecurityEvent, detectSuspiciousInput, getClientIp } from "@/lib/security-monitor";
 
 type Plan = {
@@ -55,7 +56,7 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms } = body;
+    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms, addon } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
@@ -157,7 +158,7 @@ export async function POST(req: Request) {
         const twitchRes = await fetch("https://gql.twitch.tv/gql", {
           method: "POST",
           headers: {
-            "Client-ID": process.env.TWITCH_GQL_CLIENT_ID || "kimne78kx3ncx6brgo4mv6wki5h1ko",
+            "Client-ID": process.env.TWITCH_GQL_CLIENT_ID!,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -184,26 +185,47 @@ export async function POST(req: Request) {
 
     const activeOrder = await prisma.order.findFirst({
       where: {
-        userId: user.id,
         serviceId: service.id,
-        status: { in: ["payment", "pending", "processing", "inprogress"] },
+        link: parsedLink,
+        status: { in: ["pending", "processing", "inprogress"] },
       },
     });
     if (activeOrder) {
       return NextResponse.json(
-        { error: "You already have an active order for this service. Please wait until it is completed or cancelled before placing a new one." },
+        { error: "There is already an active order for this Twitch account. Please wait until it is completed or cancelled before placing a new one." },
         { status: 409 }
       );
     }
 
-    const price = Number(selectedPlan.price.toFixed(2));
+    let finalPrice = Number(selectedPlan.price.toFixed(2));
+    let finalQuantity = planValue;
+    let addonQuantity: number | false = false;
+
+    if (addon) {
+      const svcConfig = service.config as Record<string, unknown> | null;
+      const addonCfg = svcConfig?.addon as { quantity?: number; price?: number } | undefined;
+      if (addonCfg?.quantity && addonCfg.quantity > 0 && addonCfg?.price && addonCfg.price > 0) {
+        finalPrice = Number((finalPrice + addonCfg.price).toFixed(2));
+        finalQuantity += addonCfg.quantity;
+        addonQuantity = addonCfg.quantity;
+      }
+    }
+
+    const price = finalPrice;
     const oid = generateOid();
     const gateway =
       paymentMethod === "crypto"
-        ? "crypto"
+        ? "oxapay"
         : paymentMethod === "wallet"
-          ? "wallet"
-          : "stripe";
+        ? "wallet"
+        : "stripe";
+
+    let discountedPrice = price;
+    if (gateway === "oxapay") {
+      discountedPrice = Number((price * 0.7).toFixed(2));
+    } else if (gateway === "stripe") {
+      discountedPrice = Number((price * 0.85).toFixed(2));
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -213,22 +235,39 @@ export async function POST(req: Request) {
         apiId: service.apiId,
         status: "payment",
         link: parsedLink,
-        price,
-        quantity: planValue,
+        price: discountedPrice,
+        quantity: finalQuantity,
         gateway,
         data: {
           mode: "web",
           service: service.name,
           plan: selectedPlan.name,
+          ...(addonQuantity ? { addon: addonQuantity } : {}),
           ...(comments ? { comments } : {}),
         },
       },
     });
 
-    if (gateway === "crypto") {
-      return NextResponse.json({
-        url: `/checkout/failed?reason=crypto_coming_soon&service=${service.slug}`,
-      });
+    if (gateway === "oxapay") {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+        const invoice = await createOxaPayInvoice({
+          amount: discountedPrice,
+          orderId: oid,
+          email: emailClean,
+          description: `${service.name} - ${selectedPlan.name}`,
+          returnUrl: `${appUrl}/checkout/success?session_id=${oid}`,
+          callbackUrl: `${appUrl}/api/webhooks/oxapay`,
+        });
+
+        return NextResponse.json({ url: invoice.data.payment_url });
+      } catch (error) {
+        console.error("OxaPay error:", error);
+        return NextResponse.json(
+          { error: "Failed to initialize crypto payment" },
+          { status: 500 }
+        );
+      }
     }
 
     if (gateway === "wallet") {
@@ -290,7 +329,7 @@ export async function POST(req: Request) {
       orderId: order.id,
       oid,
       email: emailClean,
-      amount: price,
+      amount: discountedPrice,
       serviceSlug: service.slug,
       quantity: planValue,
     });

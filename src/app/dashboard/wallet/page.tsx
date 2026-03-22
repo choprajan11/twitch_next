@@ -131,9 +131,15 @@ function WalletContent() {
 
         {/* Add Funds Card */}
         <div className="lg:col-span-2 bento-card-static p-6">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white mb-4">
-            Add Funds
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+              Add Funds
+            </h2>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 text-[10px] font-bold">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5a1.5 1.5 0 0 1 0 3H9" /></svg>
+              Crypto Only
+            </span>
+          </div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm font-semibold">
@@ -167,7 +173,7 @@ function WalletContent() {
               isDisabled={isPending}
               className="h-auto bg-[#9146FF] hover:bg-[#7b35de] text-white font-bold rounded-xl shadow-lg shadow-[#9146FF]/20 px-6"
             >
-              Add Funds
+              {isPending ? "Processing..." : "Pay with Crypto"}
             </Button>
           </div>
 
@@ -182,6 +188,9 @@ function WalletContent() {
               </button>
             ))}
           </div>
+          <p className="text-[11px] text-zinc-500 mt-2">
+            Pay with BTC, ETH, USDT &amp; more. Funds are credited instantly after confirmation.
+          </p>
         </div>
       </div>
 
