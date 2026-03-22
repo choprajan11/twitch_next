@@ -6,9 +6,11 @@ import { getSession } from "@/lib/auth";
 // Note: In Growtwitch, Service ID 1 (Followers) uses external API (PureSMM)
 // while Service IDs 2,3,4,5 use StreamRise
 const STREAMRISE_SERVICES: Record<string, string> = {
-  "buy-viewers": "viewers", 
+  "buy-viewers": "viewers",
   "buy-clip-views": "clip_views",
   "buy-video-views": "video_views",
+  "buy-profile-views": "profile_views",
+  "buy-story-views": "story_views",
   "buy-chatbot": "chat_bots",
 };
 
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Services updated - StreamRise for viewers/clips/chatbot, External API for followers",
+      message: "Services updated - StreamRise for viewers/views/chatbot, External API for followers",
       results,
     });
   } catch (error) {

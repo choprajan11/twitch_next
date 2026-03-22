@@ -2,6 +2,47 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { connectApi } from "@/lib/providers";
+import { decrypt } from "@/lib/encryption";
+import { isStreamRiseService } from "@/lib/streamrise";
+
+type Plan = {
+  price?: number;
+  cost?: number;
+  quantity?: number;
+  duration?: number;
+};
+
+function getServicePlanMetrics(plansValue: unknown) {
+  const plans = Array.isArray(plansValue) ? (plansValue as Plan[]) : [];
+  const validPrices = plans.filter((plan) => typeof plan.price === "number");
+  const costedPlans = validPrices.filter(
+    (plan) => typeof plan.cost === "number" && Number.isFinite(plan.cost) && (plan.cost ?? 0) > 0
+  );
+
+  const startPrice = validPrices.length
+    ? Math.min(...validPrices.map((plan) => plan.price as number))
+    : null;
+
+  const avgProfit = costedPlans.length
+    ? costedPlans.reduce((sum, plan) => sum + ((plan.price as number) - (plan.cost as number)), 0) / costedPlans.length
+    : null;
+
+  const avgMarkup = costedPlans.length
+    ? costedPlans.reduce(
+        (sum, plan) => sum + ((((plan.price as number) - (plan.cost as number)) / (plan.cost as number)) * 100),
+        0
+      ) / costedPlans.length
+    : null;
+
+  return {
+    planCount: plans.length,
+    startPrice,
+    avgProfit,
+    avgMarkup,
+    costedPlanCount: costedPlans.length,
+  };
+}
 
 export async function getAllServices() {
   await requireAdmin();
@@ -14,18 +55,26 @@ export async function getAllServices() {
       },
     });
 
-    return services.map((service) => ({
-      id: service.id,
-      name: service.name,
-      slug: service.slug,
-      category: service.category.name,
-      active: service.status,
-      plans: Array.isArray(service.plans) ? (service.plans as unknown[]).length : 0,
-      sales: service._count.orders,
-      apiId: service.apiId,
-      apiServiceId: service.apiServiceId,
-      type: service.type,
-    }));
+    return services.map((service) => {
+      const metrics = getServicePlanMetrics(service.plans);
+
+      return {
+        id: service.id,
+        name: service.name,
+        slug: service.slug,
+        category: service.category.name,
+        active: service.status,
+        plans: metrics.planCount,
+        sales: service._count.orders,
+        apiId: service.apiId,
+        apiServiceId: service.apiServiceId,
+        type: service.type,
+        startPrice: metrics.startPrice,
+        avgProfit: metrics.avgProfit,
+        avgMarkup: metrics.avgMarkup,
+        costedPlanCount: metrics.costedPlanCount,
+      };
+    });
   } catch (error) {
     console.error("Failed to fetch services:", error);
     return [];
@@ -145,7 +194,6 @@ export async function getProviders() {
       isStreamRise: false,
     }));
     
-    // Add StreamRise as a virtual provider if configured
     if (process.env.STREAMRISE_TOKEN) {
       providers.unshift({
         id: "streamrise",
@@ -159,5 +207,121 @@ export async function getProviders() {
   } catch (error) {
     console.error("Failed to fetch providers:", error);
     return [];
+  }
+}
+
+// Rates cache: apiId -> { serviceId -> rate per 1000 }
+type RateMap = Record<string, number>;
+
+async function fetchApiRates(apiId: string): Promise<RateMap> {
+  const api = await prisma.api.findUnique({ where: { id: apiId } });
+  if (!api) return {};
+
+  const apiData = (api.data as Record<string, unknown>) || {};
+  const keyParam = (apiData.key as string) || "key";
+  const apiKey = decrypt(api.key);
+
+  const result = await connectApi(api.url, {
+    [keyParam]: apiKey,
+    action: "services",
+  });
+
+  if (!result.success || !Array.isArray(result.data)) return {};
+
+  const rates: RateMap = {};
+  for (const svc of result.data) {
+    if (svc.service && svc.rate != null) {
+      rates[String(svc.service)] = parseFloat(svc.rate);
+    }
+  }
+  return rates;
+}
+
+export async function syncProviderCosts(): Promise<{
+  success: boolean;
+  updated: number;
+  skipped: number;
+  details: string[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const details: string[] = [];
+  let updated = 0;
+  let skipped = 0;
+
+  try {
+    const services = await prisma.service.findMany({
+      select: { id: true, name: true, slug: true, type: true, apiId: true, apiServiceId: true, plans: true },
+    });
+
+    // Collect unique external API IDs so we only fetch each once
+    const externalApiIds = new Set<string>();
+    for (const svc of services) {
+      if (svc.apiId && svc.apiServiceId && !isStreamRiseService(svc.type)) {
+        externalApiIds.add(svc.apiId);
+      }
+    }
+
+    // Fetch rate maps from each external provider
+    const rateMaps: Record<string, RateMap> = {};
+    for (const apiId of externalApiIds) {
+      try {
+        rateMaps[apiId] = await fetchApiRates(apiId);
+        const count = Object.keys(rateMaps[apiId]).length;
+        details.push(`Fetched ${count} service rates from provider ${apiId}`);
+      } catch (err) {
+        details.push(`Failed to fetch rates from provider ${apiId}: ${err}`);
+        rateMaps[apiId] = {};
+      }
+    }
+
+    for (const svc of services) {
+      const plans = Array.isArray(svc.plans) ? (svc.plans as Array<Plan & { quantity?: number; duration?: number }>) : [];
+      if (plans.length === 0) {
+        skipped++;
+        continue;
+      }
+
+      // External SMM API service (e.g. PureSMM)
+      if (svc.apiId && svc.apiServiceId && rateMaps[svc.apiId]) {
+        const ratePerK = rateMaps[svc.apiId][svc.apiServiceId];
+        if (ratePerK == null || ratePerK <= 0) {
+          details.push(`${svc.name}: no rate found for service #${svc.apiServiceId}`);
+          skipped++;
+          continue;
+        }
+
+        const updatedPlans = plans.map(plan => {
+          const qty = plan.quantity ?? 0;
+          if (qty <= 0) return plan;
+          const cost = parseFloat(((ratePerK / 1000) * qty).toFixed(2));
+          return { ...plan, cost };
+        });
+
+        await prisma.service.update({
+          where: { id: svc.id },
+          data: { plans: updatedPlans as Parameters<typeof prisma.service.update>[0]["data"]["plans"] },
+        });
+
+        const sample = updatedPlans[0];
+        details.push(`${svc.name}: synced from API rate $${ratePerK}/1K (e.g. ${sample?.quantity ?? 0} units = $${sample?.cost})`);
+        updated++;
+        continue;
+      }
+
+      // StreamRise service — API doesn't expose pricing, skip
+      if (isStreamRiseService(svc.type)) {
+        details.push(`${svc.name}: StreamRise doesn't expose rates — costs kept as-is`);
+        skipped++;
+        continue;
+      }
+
+      skipped++;
+    }
+
+    return { success: true, updated, skipped, details };
+  } catch (error: unknown) {
+    console.error("Failed to sync provider costs:", error);
+    return { success: false, updated, skipped, details, error: String(error) };
   }
 }

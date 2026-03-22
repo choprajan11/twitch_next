@@ -4,12 +4,14 @@ import { getMessagesForCategories, parseCustomMessages } from "./chatMessages";
 export const STREAMRISE_API_URL = "https://streamrise.ru/api";
 
 // StreamRise service type mapping
-// Note: Followers (service ID 1 in Growtwitch) uses external API (PureSMM), not StreamRise
-// Only viewers, clip views, video views, and chatbot use StreamRise
+// Note: Followers use the external API (PureSMM), not StreamRise.
+// Lightweight Twitch view-based products are routed through StreamRise.
 export const STREAMRISE_SERVICES: Record<string, string> = {
   viewers: "twitchViewersPeriod&interval=500&period=0&periodAmount=1",
   clip_views: "twitchViewsClip&interval=500",
   video_views: "twitchViewsVideo&interval=500",
+  profile_views: "twitchViewsProfile&interval=500",
+  story_views: "twitchStories&interval=500",
   chat_bots: "twitchChatBotsViewers&interval=1000&messageInterval=45000&period=0&periodAmount=1&randomMessages=false&repeatMessages=true",
 };
 
@@ -86,11 +88,25 @@ export async function uploadChatMessages(channel: string, messages: string[]): P
   }
 }
 
+export interface StreamRiseOrderOptions {
+  comments?: string;
+  frequency?: "weekly" | "monthly";
+  boosts?: {
+    claimPoints?: boolean;
+    joinRaids?: boolean;
+  };
+}
+
+const FREQUENCY_TO_PERIOD: Record<string, number> = {
+  weekly: 2,
+  monthly: 3,
+};
+
 export async function createStreamRiseOrder(
   serviceType: string,
   channel: string,
   quantity: number,
-  comments?: string
+  options?: string | StreamRiseOrderOptions
 ): Promise<StreamRiseResponse> {
   const token = getStreamRiseToken();
   const serviceParam = STREAMRISE_SERVICES[serviceType];
@@ -99,25 +115,25 @@ export async function createStreamRiseOrder(
     return { success: false, error: `Unknown service type: ${serviceType}` };
   }
 
+  // Normalize options — legacy callers pass comments as a string
+  const opts: StreamRiseOrderOptions =
+    typeof options === "string" ? { comments: options } : options || {};
+
   // For chat bots, upload messages first
   if (serviceType === "chat_bots") {
     let messages: string[] = [];
     
-    if (comments) {
-      if (comments.startsWith("custom:")) {
-        // Custom messages from user
-        messages = parseCustomMessages(comments.slice(7));
-      } else if (comments.startsWith("categories:")) {
-        // Category-based messages
-        const categories = comments.slice(11);
+    if (opts.comments) {
+      if (opts.comments.startsWith("custom:")) {
+        messages = parseCustomMessages(opts.comments.slice(7));
+      } else if (opts.comments.startsWith("categories:")) {
+        const categories = opts.comments.slice(11);
         messages = getMessagesForCategories(categories);
       } else {
-        // Legacy format: assume newline-separated messages
-        messages = parseCustomMessages(comments);
+        messages = parseCustomMessages(opts.comments);
       }
     }
     
-    // If no messages provided, use default random messages
     if (messages.length === 0) {
       messages = getMessagesForCategories(["random"]);
     }
@@ -129,7 +145,38 @@ export async function createStreamRiseOrder(
   }
 
   try {
-    const url = `/newOrder?key=${token}&channel=${encodeURIComponent(channel)}&amount=${quantity}&service=${serviceParam}`;
+    // Build the service URL with subscription & boost params
+    let svcUrl = serviceParam;
+
+    // Override period for subscription orders
+    if (opts.frequency && FREQUENCY_TO_PERIOD[opts.frequency] != null) {
+      const period = FREQUENCY_TO_PERIOD[opts.frequency];
+      svcUrl = svcUrl.replace(/period=\d+/, `period=${period}`);
+      if (!svcUrl.includes("period=")) {
+        svcUrl += `&period=${period}`;
+      }
+      if (!svcUrl.includes("periodAmount=")) {
+        svcUrl += "&periodAmount=1";
+      }
+    }
+
+    // Subscription orders get natural viewer fluctuation by default
+    if (opts.frequency && serviceType === "viewers") {
+      svcUrl += "&flexThreads=true&flexChangePercent=10&flexInterval=60000&flexMinimum=70";
+    }
+
+    // Boost: channel points
+    if (opts.boosts?.claimPoints) {
+      svcUrl += "&claimPoints=true";
+    }
+
+    // Boost: join raids
+    if (opts.boosts?.joinRaids) {
+      const raidsAmount = Math.max(1, Math.floor(quantity / 2));
+      svcUrl += `&joinRaids=true&raidsAmount=${raidsAmount}`;
+    }
+
+    const url = `/newOrder?key=${token}&channel=${encodeURIComponent(channel)}&amount=${quantity}&service=${svcUrl}`;
     const data = await streamriseFetch(url);
 
     if (data.error) {
@@ -140,7 +187,6 @@ export async function createStreamRiseOrder(
       return { success: true, orderId: String(data.orderId) };
     }
 
-    // Sometimes StreamRise returns success without orderId
     return { success: true, orderId: String(Date.now()) };
   } catch (error: any) {
     console.error("StreamRise order error:", error);

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     const formattedAmount = Number(numAmount.toFixed(2));
-    const txnId = `wallet_${session.userId}_${crypto.randomUUID()}`;
+    const txnId = `WAL-${Date.now()}-${crypto.randomBytes(4).toString("hex").slice(0, 6)}`;
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },

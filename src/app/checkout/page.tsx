@@ -27,12 +27,24 @@ type Plan = {
   quantity?: number;
   duration?: number;
   popular?: boolean;
-  frequency?: "daily" | "weekly" | "monthly";
+  frequency?: "weekly" | "monthly";
 };
 
 type AddonConfig = {
   quantity: number;
   price: number;
+};
+
+type Boosts = {
+  claimPoints: boolean;
+  joinRaids: boolean;
+};
+
+type DurationTab = "once" | "weekly" | "monthly";
+const DURATION_LABELS: Record<DurationTab, string> = {
+  once: "Per Stream",
+  weekly: "Weekly",
+  monthly: "Monthly",
 };
 
 function getServiceTheme(slug: string | null) {
@@ -45,6 +57,8 @@ function getServiceTheme(slug: string | null) {
     return { color: "#22c55e", label: "Chat Engagement" };
   if (s.includes("clip")) return { color: "#ec4899", label: "Clip Views" };
   if (s.includes("video")) return { color: "#f59e0b", label: "Video Views" };
+  if (s.includes("profile")) return { color: "#8b5cf6", label: "Profile Views" };
+  if (s.includes("story")) return { color: "#f97316", label: "Story Views" };
   return { color: "#9146FF", label: "Service" };
 }
 
@@ -56,6 +70,8 @@ function getDeliveryEstimate(type: string | null, slug: string | null) {
   if (t === "chatbot" || s.includes("chat") || s.includes("bot")) return "Activates when you go live";
   if (t === "clip_views" || s.includes("clip")) return "Starts within 5–10 min";
   if (t === "video_views" || s.includes("video")) return "Starts within 5–10 min";
+  if (t === "profile_views" || s.includes("profile")) return "Starts within 5–10 min";
+  if (t === "story_views" || s.includes("story")) return "Starts within 5–10 min";
   return "Starts within minutes";
 }
 
@@ -67,6 +83,8 @@ function getQuantityUnit(type: string | null, slug: string | null) {
   if (t === "chatbot" || s.includes("chat") || s.includes("bot")) return "hours";
   if (t === "clip_views" || s.includes("clip")) return "clip views";
   if (t === "video_views" || s.includes("video")) return "video views";
+  if (t === "profile_views" || s.includes("profile")) return "profile views";
+  if (t === "story_views" || s.includes("story")) return "story views";
   return "";
 }
 
@@ -100,29 +118,45 @@ function CheckoutForm() {
   const [chatMode, setChatMode] = useState<"presets" | "custom">("presets");
   const [viewingCategory, setViewingCategory] = useState<ChatCategory | null>(null);
 
+  const [durationTab, setDurationTab] = useState<DurationTab>("once");
+  const [boosts, setBoosts] = useState<Boosts>({ claimPoints: false, joinRaids: false });
+
   const formRef = useRef<HTMLFormElement>(null);
   const chatModalRef = useRef<HTMLDivElement>(null);
   const paymentModalRef = useRef<HTMLDivElement>(null);
 
   const theme = getServiceTheme(serviceSlug);
-  const currentPlan = allPlans.find((p) => p.id === selectedPlanId) || null;
+
+  const isViewerService = serviceType === "viewers" || (!serviceType && (serviceSlug?.toLowerCase().includes("viewer") && !serviceSlug?.toLowerCase().includes("clip")));
+  const hasSubscriptionPlans = allPlans.some((p) => p.frequency);
+  const showDurationTabs = isViewerService && hasSubscriptionPlans;
+
+  const filteredPlans = showDurationTabs
+    ? allPlans.filter((p) => {
+        if (durationTab === "once") return !p.frequency;
+        return p.frequency === durationTab;
+      })
+    : allPlans;
+
+  const currentPlan = filteredPlans.find((p) => p.id === selectedPlanId) || filteredPlans[0] || null;
   const serviceName = resolvedServiceName || "Service";
   const planName = currentPlan?.name || "Selected Plan";
   const basePrice = currentPlan?.price || 0;
   const addonPrice = addonSelected && addonConfig ? addonConfig.price : 0;
   let price = basePrice + addonPrice;
   
-  // Apply visual discounts based on payment method
   if (paymentMethod === "crypto") {
-    price = price * 0.7; // 30% discount
+    price = price * 0.7;
   } else if (paymentMethod === "stripe") {
-    price = price * 0.85; // 15% discount
+    price = price * 0.85;
   }
   
   const securePrice = price.toFixed(2);
   const displayQuantity = currentPlan?.quantity || currentPlan?.duration || null;
   const quantityUnit = getQuantityUnit(serviceType, serviceSlug);
-  const deliveryEstimate = getDeliveryEstimate(serviceType, serviceSlug);
+  const deliveryEstimate = durationTab !== "once"
+    ? `Auto-activates every stream (${DURATION_LABELS[durationTab].toLowerCase()})`
+    : getDeliveryEstimate(serviceType, serviceSlug);
 
   const isLinkService = serviceType
     ? ["clip_views", "video_views"].includes(serviceType)
@@ -177,6 +211,18 @@ function CheckoutForm() {
   }, [showPaymentModal, sessionEmail]);
 
   useEffect(() => {
+    if (!showDurationTabs) return;
+    const plansForTab = allPlans.filter((p) => {
+      if (durationTab === "once") return !p.frequency;
+      return p.frequency === durationTab;
+    });
+    if (plansForTab.length > 0 && !plansForTab.find((p) => p.id === selectedPlanId)) {
+      const popular = plansForTab.find((p) => p.popular);
+      setSelectedPlanId(popular?.id || plansForTab[0].id);
+    }
+  }, [durationTab, allPlans, showDurationTabs, selectedPlanId]);
+
+  useEffect(() => {
     if (!showPlanDropdown) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as Element).closest("[data-plan-dropdown]")) setShowPlanDropdown(false);
@@ -209,8 +255,19 @@ function CheckoutForm() {
   if (!serviceSlug || !planId) { router.push("/"); return null; }
 
   function openPaymentModal() {
+    if (!currentPlan) {
+      setError("Please select a package");
+      return;
+    }
     if (!formRef.current?.reportValidity()) return;
-    if (!agreedToTerms) { setError("Please agree to the Terms of Service"); return; }
+    if (isChatbotService && !chatValid) {
+      setError("Please select at least one chat category or enter custom messages");
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Refund Policy");
+      return;
+    }
     setError(null);
     setShowPaymentModal(true);
   }
@@ -232,10 +289,27 @@ function CheckoutForm() {
     }
 
     try {
+      const activeBoosts = isViewerService
+        ? {
+            ...(boosts.claimPoints ? { claimPoints: true } : {}),
+            ...(boosts.joinRaids ? { joinRaids: true } : {}),
+          }
+        : undefined;
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceSlug, planId: selectedPlanId, link, email, comments, agreedToTerms, paymentMethod, addon: addonSelected }),
+        body: JSON.stringify({
+          serviceSlug,
+          planId: currentPlan?.id || selectedPlanId,
+          link,
+          email,
+          comments,
+          agreedToTerms,
+          paymentMethod,
+          addon: addonSelected,
+          ...(activeBoosts && Object.keys(activeBoosts).length > 0 ? { boosts: activeBoosts } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Something went wrong"); setShowPaymentModal(false); setIsSubmitting(false); return; }
@@ -291,7 +365,7 @@ function CheckoutForm() {
         </div>
 
         {/* ── Error ── */}
-        {error && (
+        {error && error !== "Please agree to the Terms of Service and Refund Policy" && (
           <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 shrink-0"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
             <span className="text-sm font-semibold text-red-600 dark:text-red-400">{error}</span>
@@ -350,6 +424,66 @@ function CheckoutForm() {
                           </p>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Viewer Boosts */}
+                  {isViewerService && !isLoading && (
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                        Engagement Boosts
+                        <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400">Free</span>
+                      </label>
+                      <div className="space-y-2">
+                        <div
+                          onClick={() => setBoosts((b) => ({ ...b, claimPoints: !b.claimPoints }))}
+                          className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                            boosts.claimPoints
+                              ? "border-cyan-500 bg-cyan-500/5"
+                              : "border-[rgba(145,70,255,0.1)] bg-zinc-50 dark:bg-zinc-900/50 hover:border-cyan-500/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox isSelected={boosts.claimPoints} onChange={(v) => setBoosts((b) => ({ ...b, claimPoints: v }))} className="[&_[data-slot=control]]:mt-0">
+                              <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                            </Checkbox>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                Earn Channel Points
+                              </p>
+                              <p className="text-[11px] text-zinc-500 mt-0.5">Viewers automatically collect channel points for you</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          onClick={() => setBoosts((b) => ({ ...b, joinRaids: !b.joinRaids }))}
+                          className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                            boosts.joinRaids
+                              ? "border-cyan-500 bg-cyan-500/5"
+                              : "border-[rgba(145,70,255,0.1)] bg-zinc-50 dark:bg-zinc-900/50 hover:border-cyan-500/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox isSelected={boosts.joinRaids} onChange={(v) => setBoosts((b) => ({ ...b, joinRaids: v }))} className="[&_[data-slot=control]]:mt-0">
+                              <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                            </Checkbox>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                Join Raids
+                              </p>
+                              <p className="text-[11px] text-zinc-500 mt-0.5">Viewers participate in raids when you host other channels</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {durationTab !== "once" && (
+                        <p className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-2 flex items-center gap-1 font-medium">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                          Natural viewer fluctuation is included with {DURATION_LABELS[durationTab].toLowerCase()} plans
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -429,6 +563,40 @@ function CheckoutForm() {
                   <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white">Order Summary</h2>
                 </div>
                 <div className="p-4 sm:p-5">
+                  {/* Duration Tabs */}
+                  {showDurationTabs && !isLoading && (
+                    <div className="mb-4">
+                      <div className="flex bg-zinc-100 dark:bg-zinc-900/60 rounded-xl p-1 gap-1" role="tablist">
+                        {(Object.keys(DURATION_LABELS) as DurationTab[]).map((tab) => {
+                          const tabPlans = allPlans.filter((p) => tab === "once" ? !p.frequency : p.frequency === tab);
+                          if (tabPlans.length === 0) return null;
+                          return (
+                            <button
+                              key={tab}
+                              type="button"
+                              role="tab"
+                              aria-selected={durationTab === tab}
+                              onClick={() => setDurationTab(tab)}
+                              className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all relative ${
+                                durationTab === tab
+                                  ? "bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-white"
+                                  : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                              }`}
+                              style={durationTab === tab ? { boxShadow: `0 0 0 1px ${theme.color}30` } : {}}
+                            >
+                              {DURATION_LABELS[tab]}
+                              {tab !== "once" && (
+                                <span className="block text-[9px] font-semibold mt-0.5" style={{ color: theme.color }}>
+                                  {tab === "weekly" ? "Auto every stream" : "Best value"}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Service */}
                   <div className="flex justify-between items-center text-sm mb-3">
                     <span className="text-zinc-500 text-xs font-medium">Service</span>
@@ -440,7 +608,7 @@ function CheckoutForm() {
                   {/* Package — Dropdown */}
                   <div className="flex justify-between items-center text-sm mb-3">
                     <span className="text-zinc-500 text-xs font-medium">Package</span>
-                    {isLoading ? <span className="w-28 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" /> : allPlans.length > 1 ? (
+                    {isLoading ? <span className="w-28 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" /> : filteredPlans.length > 1 ? (
                       <div className="relative" data-plan-dropdown>
                         <button type="button" onClick={() => setShowPlanDropdown(!showPlanDropdown)}
                           className="flex items-center gap-1.5 font-bold text-xs text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
@@ -451,14 +619,13 @@ function CheckoutForm() {
                         </button>
                         {showPlanDropdown && (
                           <div className="absolute right-0 top-full mt-1.5 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 z-30 py-1 min-w-[220px] overflow-hidden" role="listbox">
-                            {allPlans.map((plan) => (
-                              <button key={plan.id} type="button" role="option" aria-selected={plan.id === selectedPlanId}
+                            {filteredPlans.map((plan, index) => (
+                              <button key={`${plan.id}-${index}`} type="button" role="option" aria-selected={plan.id === currentPlan?.id}
                                 onClick={() => { setSelectedPlanId(plan.id); setShowPlanDropdown(false); }}
-                                className={`w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors ${plan.id === selectedPlanId ? "bg-[#9146FF]/8 text-[#9146FF]" : "hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"}`}
+                                className={`w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors ${plan.id === currentPlan?.id ? "bg-[#9146FF]/8 text-[#9146FF]" : "hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"}`}
                               >
                                 <span className="flex items-center gap-2">
                                   <span className="font-semibold">{plan.name}</span>
-                                  {plan.frequency && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500 text-white capitalize">{plan.frequency}</span>}
                                   {plan.popular && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: theme.color }}>Popular</span>}
                                 </span>
                                 <span className="font-bold">${plan.price.toFixed(2)}</span>
@@ -476,11 +643,19 @@ function CheckoutForm() {
                   {!isLoading && displayQuantity != null && quantityUnit && (
                     <div className="flex justify-between items-center text-sm mb-3">
                       <span className="text-zinc-500 text-xs font-medium">Quantity</span>
-                      <span className="font-bold text-xs text-zinc-900 dark:text-white flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-zinc-900 dark:text-white">
                         {displayQuantity.toLocaleString()} {quantityUnit}
-                        {currentPlan?.frequency && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500 text-white capitalize">{currentPlan.frequency}</span>
-                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Subscription Duration */}
+                  {!isLoading && durationTab !== "once" && currentPlan?.frequency && (
+                    <div className="flex justify-between items-center text-sm mb-3">
+                      <span className="text-zinc-500 text-xs font-medium">Duration</span>
+                      <span className="flex items-center gap-1.5 font-bold text-xs" style={{ color: theme.color }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9m-9 9a9 9 0 0 1 9-9" /></svg>
+                        {currentPlan.frequency === "weekly" ? "1 Week" : "1 Month"} — Auto-renewing
                       </span>
                     </div>
                   )}
@@ -492,6 +667,17 @@ function CheckoutForm() {
                       <span className="flex items-center gap-1 text-[11px] font-semibold text-green-600 dark:text-green-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                         {deliveryEstimate}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Boosts summary */}
+                  {!isLoading && isViewerService && (boosts.claimPoints || boosts.joinRaids) && (
+                    <div className="flex justify-between items-center text-sm mb-3">
+                      <span className="text-zinc-500 text-xs font-medium">Boosts</span>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-cyan-600 dark:text-cyan-400">
+                        {[boosts.claimPoints && "Points", boosts.joinRaids && "Raids"].filter(Boolean).join(" + ")}
+                        <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-500/15 text-green-600 dark:text-green-400 ml-1">FREE</span>
                       </span>
                     </div>
                   )}
@@ -536,17 +722,25 @@ function CheckoutForm() {
                     </div>
 
                     {/* Terms */}
-                    <Checkbox isSelected={agreedToTerms} onChange={setAgreedToTerms} className="mb-4 items-start [&_[data-slot=control]]:mt-0.5">
-                      <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
-                      <Checkbox.Content>
-                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                          I agree to the <a href="/terms" target="_blank" className="text-[#9146FF] hover:underline font-medium">Terms</a> and <a href="/refund-policy" target="_blank" className="text-[#9146FF] hover:underline font-medium">Refund Policy</a>.
-                        </span>
-                      </Checkbox.Content>
-                    </Checkbox>
+                    <div className={`mb-4 p-3 rounded-xl border transition-colors ${error === "Please agree to the Terms of Service and Refund Policy" ? "border-red-500/50 bg-red-500/5" : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"}`}>
+                      <Checkbox isSelected={agreedToTerms} onChange={(val) => { setAgreedToTerms(val); if (val && error === "Please agree to the Terms of Service and Refund Policy") setError(null); }} className="items-start [&_[data-slot=control]]:mt-0.5">
+                        <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                        <Checkbox.Content>
+                          <span className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
+                            I agree to the <a href="/terms" target="_blank" className="text-[#9146FF] hover:underline font-bold">Terms</a> and <a href="/refund-policy" target="_blank" className="text-[#9146FF] hover:underline font-bold">Refund Policy</a>.
+                          </span>
+                        </Checkbox.Content>
+                      </Checkbox>
+                      {error === "Please agree to the Terms of Service and Refund Policy" && (
+                        <p className="text-[11px] text-red-500 mt-2 ml-7 font-bold flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                          You must agree to continue
+                        </p>
+                      )}
+                    </div>
 
                     {/* Pay button — opens modal */}
-                    <Button type="button" isDisabled={isSubmitting || !canPay} onPress={openPaymentModal}
+                    <Button type="button" isDisabled={isSubmitting || isLoading} onPress={openPaymentModal}
                       className="w-full h-12 text-white font-bold text-sm sm:text-base shadow-lg transition-all active:scale-[0.98] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: theme.color, boxShadow: `0 4px 14px -2px ${theme.color}40` }}
                     >
@@ -675,7 +869,7 @@ function CheckoutForm() {
                   {/* Crypto */}
                   <button type="button" onClick={() => setPaymentMethod("crypto")}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${paymentMethod === "crypto" ? "ring-2 bg-green-50/50 dark:bg-green-900/10" : "bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100/50 dark:hover:bg-zinc-700/30"}`}
-                    style={paymentMethod === "crypto" ? { ringColor: theme.color, borderColor: theme.color } : {}}
+                    style={paymentMethod === "crypto" ? { boxShadow: `0 0 0 2px ${theme.color}`, borderColor: theme.color } : {}}
                   >
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: paymentMethod === "crypto" ? `${theme.color}15` : undefined }} >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={paymentMethod === "crypto" ? "text-green-600" : "text-zinc-400"}><circle cx="12" cy="12" r="10" /><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5a1.5 1.5 0 0 1 0 3H9" /></svg>

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Button, Switch } from "@heroui/react";
-import { getAllServices, toggleServiceStatus, updateService, getProviders } from "./actions";
+import { getAllServices, toggleServiceStatus, updateService, getProviders, syncProviderCosts } from "./actions";
+
+const STREAMRISE_TYPES = ["viewers", "clip_views", "video_views", "profile_views", "story_views", "chat_bots"];
 
 interface Service {
   id: string;
@@ -15,6 +17,10 @@ interface Service {
   apiId: string | null;
   apiServiceId: string | null;
   type: string | null;
+  startPrice: number | null;
+  avgProfit: number | null;
+  avgMarkup: number | null;
+  costedPlanCount: number;
 }
 
 interface Provider {
@@ -22,6 +28,14 @@ interface Provider {
   name: string;
   url: string;
   isStreamRise: boolean;
+}
+
+function formatCurrency(value: number | null) {
+  return value == null ? "--" : `$${value.toFixed(2)}`;
+}
+
+function formatPercent(value: number | null) {
+  return value == null ? "--" : `${Math.round(value)}%`;
 }
 
 export default function ServicesPage() {
@@ -41,6 +55,8 @@ export default function ServicesPage() {
   const [newServiceCategory, setNewServiceCategory] = useState("");
   const [newServiceActive, setNewServiceActive] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadServices();
@@ -82,6 +98,25 @@ export default function ServicesPage() {
     setEditApiServiceId(service.apiServiceId || "");
     setEditType(service.type || "");
     setIsEditModalOpen(true);
+  };
+
+  const handleSyncCosts = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    try {
+      const result = await syncProviderCosts();
+      if (result.success) {
+        setSyncMessage(`Synced ${result.updated} service(s), ${result.skipped} skipped.`);
+        await loadServices();
+      } else {
+        setSyncMessage(`Sync failed: ${result.error}`);
+      }
+    } catch {
+      setSyncMessage("Sync failed unexpectedly.");
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(null), 5000);
+    }
   };
 
   const handleUpdateService = async () => {
@@ -131,6 +166,10 @@ export default function ServicesPage() {
       apiId: null,
       apiServiceId: null,
       type: null,
+      startPrice: null,
+      avgProfit: null,
+      avgMarkup: null,
+      costedPlanCount: 0,
     };
     
     setServices([...services, newService]);
@@ -163,14 +202,30 @@ export default function ServicesPage() {
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Services & Packages</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">Manage the catalog of services you offer to customers.</p>
         </div>
-        <Button 
-          onPress={() => setIsModalOpen(true)}
-          style={{ backgroundColor: '#9146FF', color: 'white' }} 
-          className="font-bold shadow-lg shadow-[#9146FF]/20 rounded-xl"
-        >
-          + Add Service
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="font-semibold border-[rgba(145,70,255,0.2)] rounded-xl text-sm"
+            onPress={handleSyncCosts}
+            isDisabled={isSyncing}
+          >
+            {isSyncing ? "Syncing..." : "Sync Costs from API"}
+          </Button>
+          <Button 
+            onPress={() => setIsModalOpen(true)}
+            style={{ backgroundColor: '#9146FF', color: 'white' }} 
+            className="font-bold shadow-lg shadow-[#9146FF]/20 rounded-xl"
+          >
+            + Add Service
+          </Button>
+        </div>
       </div>
+
+      {syncMessage && (
+        <div className="px-4 py-3 rounded-xl bg-[#9146FF]/10 border border-[#9146FF]/20 text-sm text-[#9146FF] font-medium">
+          {syncMessage}
+        </div>
+      )}
 
       {services.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -187,11 +242,15 @@ export default function ServicesPage() {
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{svc.name}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs font-bold text-[#9146FF] uppercase tracking-wider">{svc.category}</span>
-                    {svc.apiId === "streamrise" ? (
-                      <span className="text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-md">StreamRise</span>
+                    {svc.type && STREAMRISE_TYPES.includes(svc.type) ? (
+                      <span className="text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-md">StreamRise ({svc.type})</span>
                     ) : svc.apiId && svc.apiServiceId ? (
                       <span className="text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-md">
                         {providers.find(p => p.id === svc.apiId)?.name || "API"} #{svc.apiServiceId}
+                      </span>
+                    ) : svc.apiId ? (
+                      <span className="text-[10px] font-bold bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-md">
+                        {providers.find(p => p.id === svc.apiId)?.name || "API"}
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-md">No API</span>
@@ -205,16 +264,30 @@ export default function ServicesPage() {
                 />
               </div>
               
-              <div className="mt-auto pt-4 border-t border-[rgba(145,70,255,0.08)] grid grid-cols-2 gap-4">
+              <div className="mt-auto pt-4 border-t border-[rgba(145,70,255,0.08)] grid grid-cols-2 xl:grid-cols-4 gap-4">
                 <div>
                   <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Pricing Plans</p>
                   <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{svc.plans} Tiers</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Total Sales</p>
-                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{svc.sales.toLocaleString()}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Starts At</p>
+                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{formatCurrency(svc.startPrice)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Avg Markup</p>
+                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{formatPercent(svc.avgMarkup)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Avg Profit</p>
+                  <p className="text-lg font-black text-zinc-900 dark:text-white mt-0.5 tabular-nums">{formatCurrency(svc.avgProfit)}</p>
                 </div>
               </div>
+
+              <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400">
+                {svc.costedPlanCount > 0
+                  ? `Based on provider costs set for ${svc.costedPlanCount}/${svc.plans} package tiers.`
+                  : "Add provider cost values in package settings to calculate markup and profit."}
+              </p>
 
               <div className="mt-4 flex gap-2">
                 <Button 
@@ -389,6 +462,8 @@ export default function ServicesPage() {
                     <option value="chat_bots">Chat Bots</option>
                     <option value="clip_views">Clip Views</option>
                     <option value="video_views">Video Views</option>
+                    <option value="profile_views">Profile Views</option>
+                    <option value="story_views">Story Views</option>
                   </select>
                 </div>
 
@@ -420,15 +495,17 @@ export default function ServicesPage() {
                       </select>
                     </div>
 
-                    {editApiId === "streamrise" ? (
+                    {STREAMRISE_TYPES.includes(editType) && (
                       <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                        <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">StreamRise Configuration</p>
+                        <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">StreamRise Integration Active</p>
                         <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                          StreamRise uses the <strong>Service Type</strong> field above to determine which service to use. 
-                          Make sure to select the correct type (Viewers, Chat Bots, Clip Views, or Video Views).
+                          This service type (<strong>{editType}</strong>) is fulfilled via StreamRise. 
+                          No external API provider is needed — orders are routed automatically.
                         </p>
                       </div>
-                    ) : editApiId ? (
+                    )}
+
+                    {editApiId ? (
                       <div>
                         <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                           API Service ID

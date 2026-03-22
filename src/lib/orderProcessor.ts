@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { connectApi } from "./providers";
-import { createStreamRiseOrder, getStreamRiseOrderStatus, isStreamRiseService } from "./streamrise";
+import { createStreamRiseOrder, getStreamRiseOrderStatus, isStreamRiseService, type StreamRiseOrderOptions } from "./streamrise";
 import { decrypt } from "./encryption";
 
 interface ApiProvider {
@@ -73,11 +73,16 @@ async function sendSingleOrder(
   // Check if this is a StreamRise service (based on service type)
   if (isStreamRiseService(service.type)) {
     try {
+      const srOptions: StreamRiseOrderOptions = {
+        comments: orderData.comments,
+        frequency: orderData.frequency,
+        boosts: orderData.boosts,
+      };
       const response = await createStreamRiseOrder(
         service.type,
         order.link,
         order.quantity,
-        orderData.comments
+        srOptions
       );
 
       if (!response.success) {

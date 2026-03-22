@@ -4,9 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
 interface Plan {
+  id?: string;
   name: string;
-  quantity: number;
+  quantity?: number;
+  duration?: number;
   price: number;
+  cost?: number;
   popular?: boolean;
 }
 

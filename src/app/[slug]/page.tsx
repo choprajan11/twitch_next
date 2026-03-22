@@ -2,8 +2,16 @@ import { notFound } from "next/navigation";
 import { Button } from "@heroui/react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 import type { Metadata } from "next";
 import ServiceFAQ from "./ServiceFAQ";
+
+const getService = cache((slug: string) =>
+  prisma.service.findUnique({
+    where: { slug, status: true },
+    include: { category: true },
+  })
+);
 
 type Plan = {
   id: string;
@@ -11,6 +19,7 @@ type Plan = {
   price: number;
   quantity: number;
   popular?: boolean;
+  frequency?: "weekly" | "monthly";
 };
 
 type ServiceContent = {
@@ -182,6 +191,70 @@ function getServiceContent(slug: string, name: string): ServiceContent {
     };
   }
 
+  if (lower.includes("profile") || lower.includes("story")) {
+    const isStory = lower.includes("story");
+    const itemType = isStory ? "story" : "profile";
+    const itemTypeCapitalized = isStory ? "Story" : "Profile";
+
+    return {
+      icon: isStory ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="4" />
+          <path d="M9 6h6" />
+          <path d="M9 18h6" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+          <circle cx="10" cy="7" r="4" />
+          <circle cx="18" cy="17" r="3" />
+          <path d="M22 21l-1.5-1.5" />
+        </svg>
+      ),
+      color: isStory ? "#f97316" : "#8b5cf6",
+      gradient: isStory ? "from-orange-500 to-amber-500" : "from-violet-500 to-purple-600",
+      metaTitle: `Buy ${name} - Boost Twitch ${itemTypeCapitalized} Reach | GrowTwitch`,
+      metaDesc: `Buy ${name.toLowerCase()} to increase channel visibility, build social proof, and attract more organic Twitch traffic with safe, fast delivery.`,
+      heroSubtitle: `Boost your Twitch ${itemType} visibility with fast, natural-looking delivery. Increase discovery, build social proof, and keep your channel active between streams.`,
+      benefits: [
+        { title: `Increase ${itemTypeCapitalized} Visibility`, desc: `More ${itemType} views make your channel look more active and established. That stronger first impression helps convert casual visitors into followers and returning viewers.` },
+        { title: "Create Better Social Proof", desc: "View counts influence how people judge channel quality. Higher numbers signal momentum, making your brand look more credible to new viewers, collaborators, and sponsors." },
+        { title: "Support Organic Discovery", desc: `Profile and story traffic can turn passive browsing into real channel growth. More visibility means more chances for people to click through, explore your content, and follow.` },
+        { title: "Safe, Username-Only Delivery", desc: "We never ask for your password or account credentials. Just enter your public Twitch username and we'll handle the rest with secure checkout and gradual fulfillment." },
+      ],
+      howItWorks: [
+        `Choose the ${itemType} views package that fits your goals.`,
+        "Enter your Twitch username during checkout.",
+        "Complete payment securely with card or crypto.",
+        `Your ${itemType} views begin delivering within minutes to increase channel visibility.`,
+      ],
+      seoBlocks: [
+        {
+          heading: `Why Buy Twitch ${itemTypeCapitalized} Views?`,
+          text: `Most Twitch channels lose potential followers before a user ever clicks the follow button. People judge streamers quickly, and visible engagement metrics play a major role in that first impression. Buying Twitch ${itemType} views helps your channel look more active, more established, and more worth exploring.\n\nThis visibility boost is especially useful for newer creators trying to break out of the early growth stage. Stronger surface-level metrics improve credibility, which makes it easier for organic traffic to convert into real community growth.`
+        },
+        {
+          heading: `How ${itemTypeCapitalized} Views Support Channel Growth`,
+          text: `${itemTypeCapitalized} views work as a lightweight growth signal. They help reinforce that your channel is active and getting attention, which can improve click-through behavior from new visitors. If someone discovers your page or sees your story activity, stronger view counts make the channel feel more alive and trustworthy.\n\nThat matters because Twitch growth is rarely caused by a single metric. It's the combination of followers, viewer count, chat activity, and overall channel presentation that drives momentum. ${itemTypeCapitalized} views strengthen that presentation without requiring any account access.`
+        },
+        {
+          heading: `Best Way to Use ${itemTypeCapitalized} Views`,
+          text: `Use ${itemType} view boosts alongside your broader growth strategy. Keep your channel branding sharp, stream consistently, post strong clips, and pair these views with followers or live viewers when needed. The goal is not just bigger numbers, but a channel that looks healthy enough to convert curiosity into real audience growth.\n\nFor the safest approach, choose realistic package sizes and scale gradually over time. That keeps delivery aligned with natural channel growth patterns while still giving you a clear visibility advantage.`
+        },
+      ],
+      faqs: [
+        { q: `What do I need to provide for ${itemType} views?`, a: "Only your public Twitch username. We never ask for your password, login, or any private account access." },
+        { q: `How quickly are ${itemType} views delivered?`, a: "Most orders begin within 5-10 minutes. Delivery is paced to look natural and may complete over the next several hours depending on package size." },
+        { q: `Are Twitch ${itemType} views safe?`, a: "Yes. The service is delivered without account access and uses safe fulfillment methods designed to reduce platform risk." },
+        { q: `Will these views help me grow organically?`, a: `They help improve social proof and channel presentation, which can increase the chance that new visitors take your channel seriously and explore more of your content.` },
+        { q: `Can I order ${itemType} views more than once?`, a: "Yes. Many creators use repeat orders as part of a broader growth strategy, especially around launches, events, or active content weeks." },
+        { q: "Do you need any account credentials?", a: "No. We only use public-facing channel information, and all payments are processed securely." },
+        { q: "Can I combine this with other Twitch services?", a: "Absolutely. These products pair well with followers, live viewers, and chat engagement to build a stronger overall growth signal." },
+        { q: "What if I need help with my order?", a: "Our support team can help with delivery questions, order tracking, and package guidance if you need a custom recommendation." },
+      ],
+    };
+  }
+
   if (lower.includes("clip") || lower.includes("video")) {
     const isVideo = lower.includes("video");
     const itemType = isVideo ? "video" : "clip";
@@ -287,9 +360,19 @@ function getServiceContent(slug: string, name: string): ServiceContent {
   };
 }
 
+export async function generateStaticParams() {
+  const services = await prisma.service.findMany({
+    where: { status: true },
+    select: { slug: true },
+  });
+  return services.map((s) => ({ slug: s.slug }));
+}
+
+export const revalidate = 43200;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await prisma.service.findUnique({ where: { slug } });
+  const service = await getService(slug);
   if (!service) return { title: "Service Not Found" };
   const content = getServiceContent(slug, service.name);
   return {
@@ -306,16 +389,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const service = await prisma.service.findUnique({
-    where: { slug, status: true },
-    include: { category: true },
-  });
+  const service = await getService(slug);
 
   if (!service || !service.plans) {
     notFound();
   }
 
-  const plans = service.plans as unknown as Plan[];
+  const allPlans = service.plans as unknown as Plan[];
+  const plans = allPlans.filter((p) => !p.frequency);
+  const hasSubscriptions = allPlans.some((p) => p.frequency);
   const content = getServiceContent(slug, service.name);
 
   return (
@@ -399,6 +481,14 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                     </Link>
                   ))}
                 </div>
+                {hasSubscriptions && (
+                  <div className="mt-4 p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/15">
+                    <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9m-9 9a9 9 0 0 1 9-9" /></svg>
+                      Weekly &amp; Monthly plans available at checkout — viewers auto-activate every stream
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

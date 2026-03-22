@@ -36,6 +36,21 @@ const serviceIcons: Record<string, React.ReactNode> = {
       <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline>
     </svg>
   ),
+  profile: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+      <circle cx="10" cy="7" r="4" />
+      <circle cx="18" cy="17" r="3" />
+      <path d="M22 21l-1.5-1.5" />
+    </svg>
+  ),
+  story: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="4" />
+      <path d="M9 6h6" />
+      <path d="M9 18h6" />
+    </svg>
+  ),
 };
 
 function getIcon(slug: string) {
@@ -45,16 +60,20 @@ function getIcon(slug: string) {
   if (lower.includes("chat") || lower.includes("bot")) return serviceIcons.chat;
   if (lower.includes("clip")) return serviceIcons.clip;
   if (lower.includes("video")) return serviceIcons.video;
+  if (lower.includes("profile")) return serviceIcons.profile;
+  if (lower.includes("story")) return serviceIcons.story;
   return serviceIcons.follower;
 }
 
 function getColor(slug: string) {
   const lower = slug.toLowerCase();
-  if (lower.includes("follower")) return "#9146FF";
-  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return "#06b6d4";
-  if (lower.includes("chat") || lower.includes("bot")) return "#22c55e";
-  if (lower.includes("clip")) return "#ec4899";
+  if (lower.includes("follower")) return "#ec4899";
+  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return "#9146FF";
+  if (lower.includes("chat") || lower.includes("bot")) return "#06b6d4";
+  if (lower.includes("clip")) return "#22c55e";
   if (lower.includes("video")) return "#f59e0b";
+  if (lower.includes("profile")) return "#8b5cf6";
+  if (lower.includes("story")) return "#f97316";
   return "#9146FF";
 }
 

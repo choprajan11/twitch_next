@@ -15,6 +15,7 @@ type Plan = {
   quantity?: number;
   duration?: number;
   popular?: boolean;
+  frequency?: "weekly" | "monthly";
 };
 
 function generateOid(): string {
@@ -56,7 +57,7 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms, addon } = body;
+    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms, addon, boosts } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
@@ -227,6 +228,15 @@ export async function POST(req: Request) {
       discountedPrice = Number((price * 0.85).toFixed(2));
     }
 
+    // Sanitize boosts — only allow known boolean keys
+    const sanitizedBoosts =
+      boosts && typeof boosts === "object"
+        ? {
+            ...(boosts.claimPoints === true ? { claimPoints: true } : {}),
+            ...(boosts.joinRaids === true ? { joinRaids: true } : {}),
+          }
+        : undefined;
+
     const order = await prisma.order.create({
       data: {
         oid,
@@ -244,6 +254,8 @@ export async function POST(req: Request) {
           plan: selectedPlan.name,
           ...(addonQuantity ? { addon: addonQuantity } : {}),
           ...(comments ? { comments } : {}),
+          ...(selectedPlan.frequency ? { frequency: selectedPlan.frequency } : {}),
+          ...(sanitizedBoosts && Object.keys(sanitizedBoosts).length > 0 ? { boosts: sanitizedBoosts } : {}),
         },
       },
     });
