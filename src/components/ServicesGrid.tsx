@@ -9,7 +9,9 @@ type Plan = {
   popular?: boolean;
 };
 
-const serviceThemes: Record<string, { icon: React.ReactNode; color: string; gradient: string; label: string }> = {
+type ServiceTheme = { icon: React.ReactNode; color: string; gradient: string; label: string };
+
+const serviceThemes: Record<string, ServiceTheme> = {
   "buy-followers": {
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
@@ -83,7 +85,7 @@ const serviceThemes: Record<string, { icon: React.ReactNode; color: string; grad
   },
 };
 
-const defaultTheme = {
+const defaultTheme: ServiceTheme = {
   icon: (
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
@@ -99,7 +101,7 @@ function getLowestPrice(plans: Plan[]): number | null {
   return Math.min(...plans.map(p => p.price));
 }
 
-function HeroCard({ service, theme, price }: { service: { slug: string; name: string; desc: string | null }; theme: typeof defaultTheme; price: number | null }) {
+function HeroCard({ service, theme, price }: { service: { slug: string; name: string; desc: string | null }; theme: ServiceTheme; price: number | null }) {
   return (
     <Link href={`/${service.slug}`} className="block group md:col-span-7 md:row-span-2">
       <div className={`bento-card-hero relative h-full min-h-[280px] md:min-h-[380px] p-8 md:p-10 lg:p-12 flex flex-col justify-between bg-gradient-to-br ${theme.gradient} overflow-hidden`}>
@@ -146,7 +148,7 @@ function HeroCard({ service, theme, price }: { service: { slug: string; name: st
   );
 }
 
-function MediumCard({ service, theme, price }: { service: { slug: string; name: string; desc: string | null }; theme: typeof defaultTheme; price: number | null }) {
+function MediumCard({ service, theme, price }: { service: { slug: string; name: string; desc: string | null }; theme: ServiceTheme; price: number | null }) {
   return (
     <Link href={`/${service.slug}`} className="block group md:col-span-5">
       <div className="bento-card h-full p-6 md:p-7 flex flex-col justify-between relative overflow-hidden min-h-[170px]">
