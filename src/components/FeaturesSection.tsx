@@ -51,7 +51,7 @@ const features = [
     title: "Money-Back Guarantee",
     description: "100% refund if delivery doesn't start within 2 hours. No questions asked.",
     stats: [
-      { value: "30", label: "Day Refill" },
+      { value: "30-Day", label: "Refill" },
       { value: "100%", label: "Refund" }
     ],
     icon: (
@@ -69,14 +69,14 @@ export default function FeaturesSection() {
   return (
     <section className="w-full max-w-7xl mx-auto px-4 py-16 lg:py-24">
       <div className="text-center mb-12">
-        <span className="inline-block px-4 py-2 rounded-full bg-cyan-500/10 text-cyan-500 text-sm font-bold mb-4">
+        <span className="inline-block px-4 py-2 rounded-full bg-amber-500/10 text-amber-500 text-sm font-bold mb-4">
           Our Guarantees
         </span>
         <h2 className="text-3xl lg:text-5xl font-bold mb-4 text-zinc-900 dark:text-white">
           Why Streamers <span className="gradient-text">Trust Us</span>
         </h2>
         <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-          Industry-leading features that set us apart from the competition
+          Every order is backed by real guarantees — not empty promises
         </p>
       </div>
 

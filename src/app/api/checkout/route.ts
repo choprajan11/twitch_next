@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { isDisposableEmail, rateLimit } from "@/lib/security";
 import { processOrderImmediately } from "@/lib/orderProcessor";
 import { processStripeRequest } from "@/lib/stripe";
+import { createOxaPayInvoice } from "@/lib/oxapay";
 import { logSecurityEvent, detectSuspiciousInput, getClientIp } from "@/lib/security-monitor";
 
 type Plan = {
@@ -14,6 +15,7 @@ type Plan = {
   quantity?: number;
   duration?: number;
   popular?: boolean;
+  frequency?: "weekly" | "monthly";
 };
 
 function generateOid(): string {
@@ -55,11 +57,18 @@ function parseTwitchLink(input: string, serviceType?: string | null): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { serviceSlug, planId, link, email, paymentMethod, comments } = body;
+    const { serviceSlug, planId, link, email, paymentMethod, comments, agreedToTerms, addon, boosts } = body;
 
     if (!serviceSlug || !planId || !link || !email) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (!agreedToTerms) {
+      return NextResponse.json(
+        { error: "Please agree to the Terms of Service and Refund Policy" },
         { status: 400 }
       );
     }
@@ -145,20 +154,88 @@ export async function POST(req: Request) {
       );
     }
 
+    if (service.type === "followers" || service.slug?.includes("follower")) {
+      try {
+        const twitchRes = await fetch("https://gql.twitch.tv/gql", {
+          method: "POST",
+          headers: {
+            "Client-ID": process.env.TWITCH_GQL_CLIENT_ID!,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: `query { user(login: "${parsedLink.replace(/[^a-zA-Z0-9_]/g, "")}") { id } }`,
+          }),
+        });
+        const twitchData = await twitchRes.json();
+        if (!twitchData?.data?.user) {
+          return NextResponse.json(
+            { error: "Twitch account not found. Please check the username and ensure your account has a verified email and phone number." },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // Don't block order if Twitch API is temporarily unavailable
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { email: emailClean },
       create: { email: emailClean },
       update: {},
     });
 
-    const price = Number(selectedPlan.price.toFixed(2));
+    const activeOrder = await prisma.order.findFirst({
+      where: {
+        serviceId: service.id,
+        link: parsedLink,
+        status: { in: ["pending", "processing", "inprogress"] },
+      },
+    });
+    if (activeOrder) {
+      return NextResponse.json(
+        { error: "There is already an active order for this Twitch account. Please wait until it is completed or cancelled before placing a new one." },
+        { status: 409 }
+      );
+    }
+
+    let finalPrice = Number(selectedPlan.price.toFixed(2));
+    let finalQuantity = planValue;
+    let addonQuantity: number | false = false;
+
+    if (addon) {
+      const svcConfig = service.config as Record<string, unknown> | null;
+      const addonCfg = svcConfig?.addon as { quantity?: number; price?: number } | undefined;
+      if (addonCfg?.quantity && addonCfg.quantity > 0 && addonCfg?.price && addonCfg.price > 0) {
+        finalPrice = Number((finalPrice + addonCfg.price).toFixed(2));
+        finalQuantity += addonCfg.quantity;
+        addonQuantity = addonCfg.quantity;
+      }
+    }
+
+    const price = finalPrice;
     const oid = generateOid();
     const gateway =
       paymentMethod === "crypto"
-        ? "crypto"
+        ? "oxapay"
         : paymentMethod === "wallet"
-          ? "wallet"
-          : "stripe";
+        ? "wallet"
+        : "stripe";
+
+    let discountedPrice = price;
+    if (gateway === "oxapay") {
+      discountedPrice = Number((price * 0.7).toFixed(2));
+    } else if (gateway === "stripe") {
+      discountedPrice = Number((price * 0.85).toFixed(2));
+    }
+
+    // Sanitize boosts — only allow known boolean keys
+    const sanitizedBoosts =
+      boosts && typeof boosts === "object"
+        ? {
+            ...(boosts.claimPoints === true ? { claimPoints: true } : {}),
+            ...(boosts.joinRaids === true ? { joinRaids: true } : {}),
+          }
+        : undefined;
 
     const order = await prisma.order.create({
       data: {
@@ -168,22 +245,41 @@ export async function POST(req: Request) {
         apiId: service.apiId,
         status: "payment",
         link: parsedLink,
-        price,
-        quantity: planValue,
+        price: discountedPrice,
+        quantity: finalQuantity,
         gateway,
         data: {
           mode: "web",
           service: service.name,
           plan: selectedPlan.name,
+          ...(addonQuantity ? { addon: addonQuantity } : {}),
           ...(comments ? { comments } : {}),
+          ...(selectedPlan.frequency ? { frequency: selectedPlan.frequency } : {}),
+          ...(sanitizedBoosts && Object.keys(sanitizedBoosts).length > 0 ? { boosts: sanitizedBoosts } : {}),
         },
       },
     });
 
-    if (gateway === "crypto") {
-      return NextResponse.json({
-        url: "/checkout/failed?reason=crypto_coming_soon",
-      });
+    if (gateway === "oxapay") {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+        const invoice = await createOxaPayInvoice({
+          amount: discountedPrice,
+          orderId: oid,
+          email: emailClean,
+          description: `${service.name} - ${selectedPlan.name}`,
+          returnUrl: `${appUrl}/checkout/success?session_id=${oid}`,
+          callbackUrl: `${appUrl}/api/webhooks/oxapay`,
+        });
+
+        return NextResponse.json({ url: invoice.data.payment_url });
+      } catch (error) {
+        console.error("OxaPay error:", error);
+        return NextResponse.json(
+          { error: "Failed to initialize crypto payment" },
+          { status: 500 }
+        );
+      }
     }
 
     if (gateway === "wallet") {
@@ -245,7 +341,7 @@ export async function POST(req: Request) {
       orderId: order.id,
       oid,
       email: emailClean,
-      amount: price,
+      amount: discountedPrice,
       serviceSlug: service.slug,
       quantity: planValue,
     });

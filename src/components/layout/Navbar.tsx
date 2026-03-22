@@ -18,7 +18,7 @@ function getServiceIcon(slug: string) {
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
     </svg>
   );
-  if (lower.includes("viewer") && !lower.includes("clip")) return (
+  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
     </svg>
@@ -28,9 +28,14 @@ function getServiceIcon(slug: string) {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   );
-  if (lower.includes("clip") || lower.includes("video")) return (
+  if (lower.includes("clip")) return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+    </svg>
+  );
+  if (lower.includes("video")) return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline>
     </svg>
   );
   return (
@@ -43,9 +48,10 @@ function getServiceIcon(slug: string) {
 function getServiceColor(slug: string) {
   const lower = slug.toLowerCase();
   if (lower.includes("follower")) return "#9146FF";
-  if (lower.includes("viewer") && !lower.includes("clip")) return "#06b6d4";
+  if (lower.includes("viewer") && !lower.includes("clip") && !lower.includes("video")) return "#06b6d4";
   if (lower.includes("chat") || lower.includes("bot")) return "#22c55e";
-  if (lower.includes("clip") || lower.includes("video")) return "#ec4899";
+  if (lower.includes("clip")) return "#ec4899";
+  if (lower.includes("video")) return "#f59e0b";
   return "#9146FF";
 }
 
@@ -151,12 +157,6 @@ export function Navbar() {
                 </Link>
                 <ServicesDropdown />
                 <Link
-                  href="/pricing"
-                  className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
-                >
-                  Pricing
-                </Link>
-                <Link
                   href="/orders"
                   className="px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
                 >
@@ -234,17 +234,6 @@ export function Navbar() {
           >
             <span className="flex h-2 w-2 rounded-full bg-pink-500 animate-pulse"></span>
             Free Trial
-          </Link>
-
-          <Link
-            href="/pricing"
-            onClick={closeMenu}
-            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-[#9146FF] hover:bg-[#9146FF]/10 rounded-xl transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            Pricing
           </Link>
 
           <Link

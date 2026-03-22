@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const TWITCH_GQL_URL = "https://gql.twitch.tv/gql";
-const TWITCH_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+const TWITCH_CLIENT_ID = process.env.TWITCH_GQL_CLIENT_ID!;
 
 export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get("username")?.trim();

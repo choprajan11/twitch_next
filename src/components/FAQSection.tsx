@@ -8,10 +8,6 @@ const faqs = [
     a: "Yes! We use safe, organic methods that comply with Twitch's Terms of Service. We never ask for your password, and our delivery methods are designed to look natural and protect your account."
   },
   {
-    q: "Can Twitch ban my account for buying followers?",
-    a: "When done correctly, no. We deliver followers gradually and naturally, mimicking organic growth patterns. We've helped over 50,000 streamers without any account issues."
-  },
-  {
     q: "How long does delivery take?",
     a: "Most orders begin within 60 seconds of payment confirmation. Depending on your package size, full delivery typically completes within a few minutes to a few hours for larger orders."
   },
@@ -24,12 +20,8 @@ const faqs = [
     a: "Absolutely not! We only need your Twitch username. We never ask for passwords, emails, or any sensitive account information."
   },
   {
-    q: "What payment methods do you accept?",
-    a: "We accept all major credit/debit cards through Stripe, as well as PayPal and cryptocurrency. All transactions are encrypted and secure."
-  },
-  {
     q: "What if my followers drop?",
-    a: "We offer a 30-day refill guarantee. If any followers drop within 30 days of delivery, we'll refill them for free—no questions asked."
+    a: "We offer a 30-day refill guarantee. If any followers drop within 30 days of delivery, we'll refill them for free — no questions asked."
   },
   {
     q: "Can I get a refund?",

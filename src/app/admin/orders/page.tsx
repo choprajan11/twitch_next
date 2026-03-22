@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Button } from "@heroui/react";
+import CopyButton from "@/components/CopyButton";
 import {
   getAllOrders,
   updateOrderStatus,
@@ -20,6 +21,9 @@ interface Order {
   date: Date;
   gateway: string | null;
   quantity: number;
+  startCount: number;
+  remains: number;
+  apiOrderId: string | null;
 }
 
 const ORDER_STATUSES = [
@@ -172,6 +176,9 @@ export default function OrdersPage() {
                   Amount
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                  Progress
+                </th>
+                <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold text-zinc-500 uppercase tracking-wider text-right">
@@ -183,7 +190,7 @@ export default function OrdersPage() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-zinc-500 text-sm"
                   >
                     Loading orders...
@@ -196,26 +203,31 @@ export default function OrdersPage() {
                     className="hover:bg-[var(--bento-bg)] transition-colors"
                   >
                     <td className="px-6 py-3.5">
-                      <div className="font-bold text-sm text-zinc-900 dark:text-white">
+                      <CopyButton text={order.id} className="font-bold text-sm text-zinc-900 dark:text-white">
                         {order.id}
-                      </div>
-                      <div className="text-xs text-zinc-500">
+                      </CopyButton>
+                      <div className="text-xs text-zinc-500 mt-0.5">
                         {formatDate(order.date)}
                       </div>
+                      {order.apiOrderId && (
+                        <CopyButton text={order.apiOrderId} className="text-[10px] text-blue-500 font-mono mt-1">
+                          API: {order.apiOrderId}
+                        </CopyButton>
+                      )}
                     </td>
                     <td className="px-6 py-3.5 text-sm text-zinc-600 dark:text-zinc-400">
                       <div>{order.customerName || "Unknown"}</div>
-                      <div className="text-xs text-zinc-500">
+                      <CopyButton text={order.customer} className="text-xs text-zinc-500">
                         {order.customer}
-                      </div>
+                      </CopyButton>
                     </td>
                     <td className="px-6 py-3.5">
                       <div className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {order.service}
                       </div>
-                      <div className="text-xs font-mono text-[#9146FF] max-w-[180px] truncate">
+                      <CopyButton text={order.target} className="text-xs font-mono text-[#9146FF] max-w-[180px] truncate block">
                         {order.target}
-                      </div>
+                      </CopyButton>
                     </td>
                     <td className="px-6 py-3.5">
                       <div className="font-bold text-sm text-zinc-900 dark:text-white tabular-nums">
@@ -224,6 +236,20 @@ export default function OrdersPage() {
                       <div className="text-[11px] text-zinc-500">
                         Qty: {order.quantity}
                       </div>
+                    </td>
+                    <td className="px-6 py-3.5 text-xs">
+                      {order.startCount > 0 ? (
+                        <div className="space-y-0.5">
+                          <div className="text-zinc-500">
+                            {order.startCount.toLocaleString()} → {(order.startCount + order.quantity - order.remains).toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-green-500 font-medium">
+                            +{(order.quantity - order.remains).toLocaleString()} / {order.quantity.toLocaleString()}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-3.5">
                       <span
@@ -288,7 +314,7 @@ export default function OrdersPage() {
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-12 text-center text-zinc-500 text-sm"
                   >
                     No orders found.

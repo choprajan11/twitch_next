@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
+import { Button, Checkbox, Label } from "@heroui/react";
 import Link from "next/link";
 import { getServiceWithPlans, updateServicePlans } from "./actions";
 
 interface Plan {
+  id?: string;
   name: string;
-  quantity: number;
+  quantity?: number;
+  duration?: number;
   price: number;
+  cost?: number;
   popular?: boolean;
 }
 
@@ -18,6 +21,14 @@ interface ServiceData {
   name: string;
   slug: string;
   plans: Plan[];
+}
+
+function formatCurrency(value: number | null) {
+  return value == null ? "--" : `$${value.toFixed(2)}`;
+}
+
+function formatPercent(value: number | null) {
+  return value == null ? "--" : `${Math.round(value)}%`;
 }
 
 export default function PackagesPage() {
@@ -29,6 +40,17 @@ export default function PackagesPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  const valueLabel = service?.slug.includes("chat") || service?.slug.includes("bot") ? "Hours" : "Quantity";
+  const valuePlaceholder = service?.slug.includes("chat") || service?.slug.includes("bot") ? "1" : "100";
+  const costedPlans = plans.filter((plan) => typeof plan.cost === "number" && (plan.cost ?? 0) > 0);
+  const averageProfit = costedPlans.length
+    ? costedPlans.reduce((sum, plan) => sum + (plan.price - (plan.cost ?? 0)), 0) / costedPlans.length
+    : null;
+  const averageMarkup = costedPlans.length
+    ? costedPlans.reduce((sum, plan) => sum + (((plan.price - (plan.cost ?? 0)) / (plan.cost ?? 1)) * 100), 0) / costedPlans.length
+    : null;
+  const minPrice = plans.length ? Math.min(...plans.map((plan) => plan.price || 0)) : null;
 
   useEffect(() => {
     loadService();
@@ -50,7 +72,12 @@ export default function PackagesPage() {
   }
 
   const addPlan = () => {
-    setPlans([...plans, { name: "", quantity: 100, price: 0, popular: false }]);
+    setPlans([
+      ...plans,
+      service?.slug.includes("chat") || service?.slug.includes("bot")
+        ? { name: "", duration: 1, price: 0, cost: 0, popular: false }
+        : { name: "", quantity: 100, price: 0, cost: 0, popular: false },
+    ]);
   };
 
   const removePlan = (index: number) => {
@@ -60,6 +87,19 @@ export default function PackagesPage() {
   const updatePlan = (index: number, field: keyof Plan, value: string | number | boolean) => {
     const updated = [...plans];
     updated[index] = { ...updated[index], [field]: value };
+    setPlans(updated);
+  };
+
+  const getPlanValue = (plan: Plan) => plan.quantity ?? plan.duration ?? 0;
+
+  const updatePlanValue = (index: number, value: number) => {
+    const updated = [...plans];
+    const current = updated[index];
+    if ("duration" in current && current.duration != null && current.quantity == null) {
+      updated[index] = { ...current, duration: value };
+    } else {
+      updated[index] = { ...current, quantity: value };
+    }
     setPlans(updated);
   };
 
@@ -131,9 +171,28 @@ export default function PackagesPage() {
       </div>
 
       <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bento-card p-5">
+            <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Package Tiers</p>
+            <p className="text-2xl font-black text-zinc-900 dark:text-white mt-1 tabular-nums">{plans.length}</p>
+          </div>
+          <div className="bento-card p-5">
+            <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Starts At</p>
+            <p className="text-2xl font-black text-zinc-900 dark:text-white mt-1 tabular-nums">{formatCurrency(minPrice)}</p>
+          </div>
+          <div className="bento-card p-5">
+            <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Average Markup</p>
+            <p className="text-2xl font-black text-zinc-900 dark:text-white mt-1 tabular-nums">{formatPercent(averageMarkup)}</p>
+          </div>
+          <div className="bento-card p-5">
+            <p className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Average Profit</p>
+            <p className="text-2xl font-black text-zinc-900 dark:text-white mt-1 tabular-nums">{formatCurrency(averageProfit)}</p>
+          </div>
+        </div>
+
         {plans.map((plan, index) => (
-          <div key={index} className="bento-card p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
+          <div key={index} className="bento-card p-5 flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 w-full">
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
                   Package Name
@@ -148,13 +207,13 @@ export default function PackagesPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
-                  Quantity
+                  {valueLabel}
                 </label>
                 <input
                   type="number"
-                  value={plan.quantity}
-                  onChange={(e) => updatePlan(index, "quantity", parseInt(e.target.value) || 0)}
-                  placeholder="100"
+                  value={getPlanValue(plan)}
+                  onChange={(e) => updatePlanValue(index, parseInt(e.target.value) || 0)}
+                  placeholder={valuePlaceholder}
                   className="w-full px-3 py-2 border border-[rgba(145,70,255,0.1)] rounded-lg bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 text-sm"
                 />
               </div>
@@ -171,26 +230,58 @@ export default function PackagesPage() {
                   className="w-full px-3 py-2 border border-[rgba(145,70,255,0.1)] rounded-lg bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 text-sm"
                 />
               </div>
-              <div className="flex items-end gap-2">
-                <label className="flex items-center gap-2 cursor-pointer py-2">
-                  <input
-                    type="checkbox"
-                    checked={plan.popular || false}
-                    onChange={(e) => updatePlan(index, "popular", e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-[#9146FF] focus:ring-[#9146FF]/30"
-                  />
-                  <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Popular</span>
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+                  Provider Cost ($)
                 </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={plan.cost ?? 0}
+                  onChange={(e) => updatePlan(index, "cost", parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-[rgba(145,70,255,0.1)] rounded-lg bg-[var(--card-bg)] text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9146FF]/30 text-sm"
+                />
+              </div>
+              <div className="flex items-end gap-2 py-2">
+                <Checkbox
+                  isSelected={plan.popular || false}
+                  onChange={(selected) => updatePlan(index, "popular", selected)}
+                >
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Checkbox.Content>
+                    <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer">Popular</Label>
+                  </Checkbox.Content>
+                </Checkbox>
               </div>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="text-red-500 bg-red-500/10 font-semibold rounded-lg shrink-0"
-              onPress={() => removePlan(index)}
-            >
-              Remove
-            </Button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center border-t border-[rgba(145,70,255,0.08)] pt-4">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Markup</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-white mt-1 tabular-nums">
+                  {plan.cost && plan.cost > 0 ? formatPercent(((plan.price - plan.cost) / plan.cost) * 100) : "--"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Profit / Sale</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-white mt-1 tabular-nums">
+                  {plan.cost != null ? formatCurrency(plan.price - plan.cost) : "--"}
+                </p>
+              </div>
+              <div className="sm:col-span-2 flex justify-start sm:justify-end">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="text-red-500 bg-red-500/10 font-semibold rounded-lg shrink-0"
+                  onPress={() => removePlan(index)}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
           </div>
         ))}
 

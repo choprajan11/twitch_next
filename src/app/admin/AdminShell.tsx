@@ -101,8 +101,12 @@ const navigation = [
 
 export default function AdminShell({
   children,
+  userName,
+  userEmail,
 }: {
   children: React.ReactNode;
+  userName: string;
+  userEmail: string;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -202,11 +206,11 @@ export default function AdminShell({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 px-1 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9146FF] to-cyan-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-[#9146FF]/20 shrink-0">
-                A
+                {userName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">Admin</p>
-                <p className="text-[11px] text-zinc-500 truncate">admin@growtwitch.com</p>
+                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{userName}</p>
+                <p className="text-[11px] text-zinc-500 truncate">{userEmail}</p>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">

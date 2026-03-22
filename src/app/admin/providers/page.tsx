@@ -18,6 +18,7 @@ interface Provider {
   servicesCount: number;
   ordersCount: number;
   createdAt: Date;
+  isStreamRise: boolean;
 }
 
 export default function ProvidersPage() {
@@ -34,10 +35,10 @@ export default function ProvidersPage() {
     loadProviders();
   }, []);
 
-  async function loadProviders() {
+  async function loadProviders(autoRefresh = true) {
     setIsLoading(true);
     try {
-      const data = await getProviders();
+      const data = await getProviders(autoRefresh);
       setProviders(data);
     } catch {
       console.error("Failed to load providers");
@@ -135,7 +136,7 @@ export default function ProvidersPage() {
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 placeholder="https://provider.com/api/v2"
-                className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
+                className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white"
               />
             </div>
             <div>
@@ -147,7 +148,7 @@ export default function ProvidersPage() {
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
                 placeholder="Your API key"
-                className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF] focus:border-transparent outline-none transition-all dark:text-white"
+                className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-[rgba(145,70,255,0.1)] rounded-xl text-sm focus:ring-2 focus:ring-[#9146FF]/30 focus:border-[#9146FF]/30 outline-none transition-all dark:text-white"
               />
             </div>
           </div>
@@ -212,19 +213,28 @@ export default function ProvidersPage() {
                     className="hover:bg-[var(--bento-bg)] transition-colors"
                   >
                     <td className="px-6 py-3.5">
-                      <div className="font-bold text-sm text-zinc-900 dark:text-white capitalize">
-                        {provider.name}
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-sm text-zinc-900 dark:text-white capitalize">
+                          {provider.name}
+                        </div>
+                        {provider.isStreamRise && (
+                          <span className="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-md uppercase">
+                            ENV
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500 font-mono truncate max-w-[200px]">
                         {provider.url}
                       </div>
                     </td>
                     <td className="px-6 py-3.5">
-                      <span className="text-sm font-bold text-green-500 tabular-nums">
-                        {provider.balance !== null
-                          ? `$${provider.balance.toFixed(2)}`
-                          : "N/A"}
-                      </span>
+                      {provider.balance !== null ? (
+                        <span className="text-sm font-bold text-green-500 tabular-nums">
+                          {provider.currency === "RUB" ? "₽" : "$"}{provider.balance.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-zinc-400">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-3.5 text-sm font-semibold text-zinc-900 dark:text-white tabular-nums">
                       {provider.servicesCount}
@@ -241,16 +251,32 @@ export default function ProvidersPage() {
                           onPress={() => handleCheckBalance(provider.id)}
                           className="font-semibold border-[rgba(145,70,255,0.15)] rounded-xl hover:border-[#9146FF]/30"
                         >
-                          Check Balance
+                          {checkingId === provider.id ? "Checking..." : "Refresh"}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onPress={() => handleDelete(provider.id)}
-                          className="font-semibold rounded-xl bg-red-500/10 text-red-600 dark:text-red-400"
-                        >
-                          Remove
-                        </Button>
+                        {provider.isStreamRise ? (
+                          <a
+                            href="https://streamrise.ru/panel"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="font-semibold rounded-xl"
+                            >
+                              Panel
+                            </Button>
+                          </a>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onPress={() => handleDelete(provider.id)}
+                            className="font-semibold rounded-xl bg-red-500/10 text-red-600 dark:text-red-400"
+                          >
+                            Remove
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

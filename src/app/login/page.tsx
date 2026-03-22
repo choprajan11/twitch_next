@@ -17,7 +17,7 @@ export default async function LoginPage({
   const params = await searchParams;
 
   if (user) {
-    redirect('/dashboard');
+    redirect(user.role === 'admin' ? '/admin' : '/dashboard');
   }
 
   return (

@@ -50,7 +50,7 @@ function getIcon(slug: string, size = 24) {
 export default function NewOrderForm({ services, userEmail, walletBalance }: Props) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [gateway, setGateway] = useState<"stripe" | "wallet">("stripe");
+  const [gateway, setGateway] = useState<"stripe" | "wallet" | "crypto">("stripe");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState<{ oid: string } | null>(null);
@@ -107,6 +107,7 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
           email: userEmail,
           comments: comments || undefined,
           paymentMethod: gateway,
+          agreedToTerms: true,
         }),
       });
 
@@ -122,6 +123,8 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
         setIsSubmitting(false);
       } else if (data.url) {
         window.location.href = data.url;
+      } else {
+        setIsSubmitting(false);
       }
     } catch {
       setError("Network error. Please try again.");
@@ -307,7 +310,7 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
               <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
                 Payment Method
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setGateway("stripe")}
@@ -322,6 +325,22 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
                     <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${gateway === "stripe" ? "bg-white/20 text-white" : "bg-[#1a1f36] text-white"}`}>MC</span>
                   </div>
                   <p className="text-xs font-bold">Card</p>
+                  <p className={`text-[9px] font-bold ${gateway === "stripe" ? "text-white/70" : "text-green-500"}`}>15% off</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGateway("crypto")}
+                  className={`p-3 rounded-xl text-center transition-all duration-200 ${
+                    gateway === "crypto"
+                      ? "bg-[#9146FF] text-white shadow-lg shadow-[#9146FF]/25"
+                      : "bg-[var(--bento-bg)] border border-[rgba(145,70,255,0.08)] text-zinc-700 dark:text-zinc-300 hover:border-[#9146FF]/30"
+                  }`}
+                >
+                  <div className="flex justify-center mb-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5a1.5 1.5 0 0 1 0 3H9" /></svg>
+                  </div>
+                  <p className="text-xs font-bold">Crypto</p>
+                  <p className={`text-[9px] font-bold ${gateway === "crypto" ? "text-white/70" : "text-green-500"}`}>30% off</p>
                 </button>
                 <button
                   type="button"
@@ -342,7 +361,8 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
               </div>
               {gateway === "wallet" && walletBalance < selectedPlan.price && (
                 <p className="text-xs text-red-500 font-medium mt-2">
-                  Need ${(selectedPlan.price - walletBalance).toFixed(2)} more.
+                  Need ${(selectedPlan.price - walletBalance).toFixed(2)} more.{" "}
+                  <a href="/dashboard/wallet" className="text-[#9146FF] hover:underline">Add funds</a>
                 </p>
               )}
             </div>
@@ -359,7 +379,11 @@ export default function NewOrderForm({ services, userEmail, walletBalance }: Pro
             style={{ backgroundColor: "#9146FF", color: "white" }}
             className="h-12 px-10 font-bold rounded-2xl shadow-lg shadow-[#9146FF]/20 text-base"
           >
-            {isSubmitting ? "Processing..." : `Pay $${selectedPlan.price.toFixed(2)}`}
+            {isSubmitting ? "Processing..." : `Pay $${(
+              gateway === "crypto" ? selectedPlan.price * 0.7
+              : gateway === "stripe" ? selectedPlan.price * 0.85
+              : selectedPlan.price
+            ).toFixed(2)}`}
           </Button>
           <span className="text-sm text-zinc-400">
             {getPlanUnitLabel(selectedPlan)} {selectedService?.name}

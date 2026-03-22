@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button, InputOTP } from '@heroui/react';
 
 type Step = 'email' | 'password' | 'verify';
@@ -64,7 +63,6 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
   const [message, setMessage] = useState<string | null>(
     initialStep === 'verify' ? `Verification code sent to ${initialEmail}` : null
   );
-  const router = useRouter();
 
   useEffect(() => {
     if (initialEmail) setEmail(initialEmail);
@@ -127,8 +125,8 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
         throw new Error(data.error || 'Invalid credentials');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      const target = data.user?.role === 'admin' ? '/admin' : '/dashboard';
+      window.location.href = target;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
@@ -155,8 +153,7 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
         throw new Error(data.error || 'Invalid code');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
@@ -236,6 +233,12 @@ export default function AuthForm({ initialEmail, initialStep }: AuthFormProps) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && email && !isLoading) {
+                  e.preventDefault();
+                  handleEmailSubmit(e as unknown as React.FormEvent);
+                }
+              }}
               placeholder="your@email.com"
               className={inputClass}
               autoFocus

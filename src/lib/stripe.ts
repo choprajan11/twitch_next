@@ -6,6 +6,8 @@ const SERVICE_CODES: Record<string, string> = {
   "buy-chatbot": "TW-BOT",
   "buy-clip-views": "TW-CLV",
   "buy-video-views": "TW-VID",
+  "buy-profile-views": "TW-PRF",
+  "buy-story-views": "TW-STY",
 };
 
 export function getServiceCode(slug: string, quantity: number): string {

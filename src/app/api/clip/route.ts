@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const TWITCH_GQL_CLIENT_ID = process.env.TWITCH_GQL_CLIENT_ID!;
+
 interface TwitchClipData {
   id: string;
   url: string;
@@ -131,7 +133,7 @@ async function fetchClipViaGQL(clipId: string): Promise<TwitchClipData | null> {
     const response = await fetch('https://gql.twitch.tv/gql', {
       method: 'POST',
       headers: {
-        'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+        'Client-ID': TWITCH_GQL_CLIENT_ID,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -185,7 +187,7 @@ async function fetchClipVideoUrl(clipId: string): Promise<string | null> {
     const response = await fetch('https://gql.twitch.tv/gql', {
       method: 'POST',
       headers: {
-        'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+        'Client-ID': TWITCH_GQL_CLIENT_ID,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify([

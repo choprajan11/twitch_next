@@ -19,5 +19,12 @@ export default async function AdminLayout({
     redirect("/dashboard");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <AdminShell 
+      userName={user.name || "Admin"} 
+      userEmail={user.email}
+    >
+      {children}
+    </AdminShell>
+  );
 }

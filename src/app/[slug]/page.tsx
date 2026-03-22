@@ -2,8 +2,16 @@ import { notFound } from "next/navigation";
 import { Button } from "@heroui/react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 import type { Metadata } from "next";
 import ServiceFAQ from "./ServiceFAQ";
+
+const getService = cache((slug: string) =>
+  prisma.service.findUnique({
+    where: { slug, status: true },
+    include: { category: true },
+  })
+);
 
 type Plan = {
   id: string;
@@ -11,6 +19,7 @@ type Plan = {
   price: number;
   quantity: number;
   popular?: boolean;
+  frequency?: "weekly" | "monthly";
 };
 
 type ServiceContent = {
@@ -182,53 +191,126 @@ function getServiceContent(slug: string, name: string): ServiceContent {
     };
   }
 
-  if (lower.includes("clip")) {
+  if (lower.includes("profile") || lower.includes("story")) {
+    const isStory = lower.includes("story");
+    const itemType = isStory ? "story" : "profile";
+    const itemTypeCapitalized = isStory ? "Story" : "Profile";
+
     return {
-      icon: (
+      icon: isStory ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="4" />
+          <path d="M9 6h6" />
+          <path d="M9 18h6" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+          <circle cx="10" cy="7" r="4" />
+          <circle cx="18" cy="17" r="3" />
+          <path d="M22 21l-1.5-1.5" />
+        </svg>
+      ),
+      color: isStory ? "#f97316" : "#8b5cf6",
+      gradient: isStory ? "from-orange-500 to-amber-500" : "from-violet-500 to-purple-600",
+      metaTitle: `Buy ${name} - Boost Twitch ${itemTypeCapitalized} Reach | GrowTwitch`,
+      metaDesc: `Buy ${name.toLowerCase()} to increase channel visibility, build social proof, and attract more organic Twitch traffic with safe, fast delivery.`,
+      heroSubtitle: `Boost your Twitch ${itemType} visibility with fast, natural-looking delivery. Increase discovery, build social proof, and keep your channel active between streams.`,
+      benefits: [
+        { title: `Increase ${itemTypeCapitalized} Visibility`, desc: `More ${itemType} views make your channel look more active and established. That stronger first impression helps convert casual visitors into followers and returning viewers.` },
+        { title: "Create Better Social Proof", desc: "View counts influence how people judge channel quality. Higher numbers signal momentum, making your brand look more credible to new viewers, collaborators, and sponsors." },
+        { title: "Support Organic Discovery", desc: `Profile and story traffic can turn passive browsing into real channel growth. More visibility means more chances for people to click through, explore your content, and follow.` },
+        { title: "Safe, Username-Only Delivery", desc: "We never ask for your password or account credentials. Just enter your public Twitch username and we'll handle the rest with secure checkout and gradual fulfillment." },
+      ],
+      howItWorks: [
+        `Choose the ${itemType} views package that fits your goals.`,
+        "Enter your Twitch username during checkout.",
+        "Complete payment securely with card or crypto.",
+        `Your ${itemType} views begin delivering within minutes to increase channel visibility.`,
+      ],
+      seoBlocks: [
+        {
+          heading: `Why Buy Twitch ${itemTypeCapitalized} Views?`,
+          text: `Most Twitch channels lose potential followers before a user ever clicks the follow button. People judge streamers quickly, and visible engagement metrics play a major role in that first impression. Buying Twitch ${itemType} views helps your channel look more active, more established, and more worth exploring.\n\nThis visibility boost is especially useful for newer creators trying to break out of the early growth stage. Stronger surface-level metrics improve credibility, which makes it easier for organic traffic to convert into real community growth.`
+        },
+        {
+          heading: `How ${itemTypeCapitalized} Views Support Channel Growth`,
+          text: `${itemTypeCapitalized} views work as a lightweight growth signal. They help reinforce that your channel is active and getting attention, which can improve click-through behavior from new visitors. If someone discovers your page or sees your story activity, stronger view counts make the channel feel more alive and trustworthy.\n\nThat matters because Twitch growth is rarely caused by a single metric. It's the combination of followers, viewer count, chat activity, and overall channel presentation that drives momentum. ${itemTypeCapitalized} views strengthen that presentation without requiring any account access.`
+        },
+        {
+          heading: `Best Way to Use ${itemTypeCapitalized} Views`,
+          text: `Use ${itemType} view boosts alongside your broader growth strategy. Keep your channel branding sharp, stream consistently, post strong clips, and pair these views with followers or live viewers when needed. The goal is not just bigger numbers, but a channel that looks healthy enough to convert curiosity into real audience growth.\n\nFor the safest approach, choose realistic package sizes and scale gradually over time. That keeps delivery aligned with natural channel growth patterns while still giving you a clear visibility advantage.`
+        },
+      ],
+      faqs: [
+        { q: `What do I need to provide for ${itemType} views?`, a: "Only your public Twitch username. We never ask for your password, login, or any private account access." },
+        { q: `How quickly are ${itemType} views delivered?`, a: "Most orders begin within 5-10 minutes. Delivery is paced to look natural and may complete over the next several hours depending on package size." },
+        { q: `Are Twitch ${itemType} views safe?`, a: "Yes. The service is delivered without account access and uses safe fulfillment methods designed to reduce platform risk." },
+        { q: `Will these views help me grow organically?`, a: `They help improve social proof and channel presentation, which can increase the chance that new visitors take your channel seriously and explore more of your content.` },
+        { q: `Can I order ${itemType} views more than once?`, a: "Yes. Many creators use repeat orders as part of a broader growth strategy, especially around launches, events, or active content weeks." },
+        { q: "Do you need any account credentials?", a: "No. We only use public-facing channel information, and all payments are processed securely." },
+        { q: "Can I combine this with other Twitch services?", a: "Absolutely. These products pair well with followers, live viewers, and chat engagement to build a stronger overall growth signal." },
+        { q: "What if I need help with my order?", a: "Our support team can help with delivery questions, order tracking, and package guidance if you need a custom recommendation." },
+      ],
+    };
+  }
+
+  if (lower.includes("clip") || lower.includes("video")) {
+    const isVideo = lower.includes("video");
+    const itemType = isVideo ? "video" : "clip";
+    const itemTypeCapitalized = isVideo ? "Video" : "Clip";
+    
+    return {
+      icon: isVideo ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+          <polyline points="17 2 12 7 7 2"></polyline>
+        </svg>
+      ) : (
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
         </svg>
       ),
-      color: "#ec4899",
-      gradient: "from-pink-500 to-rose-500",
-      metaTitle: `Buy ${name} - Viral Twitch Clips | GrowTwitch`,
+      color: isVideo ? "#f59e0b" : "#ec4899",
+      gradient: isVideo ? "from-amber-500 to-orange-500" : "from-pink-500 to-rose-500",
+      metaTitle: `Buy ${name} - Viral Twitch ${itemTypeCapitalized}s | GrowTwitch`,
       metaDesc: `Buy ${name.toLowerCase()} to make your best Twitch moments go viral. Fast delivery, real-looking views, and 30-day guarantee on every order.`,
-      heroSubtitle: `Make your best Twitch moments go viral. Boost your clip views to increase visibility across Twitch and social media, and attract new viewers to your channel.`,
+      heroSubtitle: `Make your best Twitch moments go viral. Boost your ${itemType} views to increase visibility across Twitch and social media, and attract new viewers to your channel.`,
       benefits: [
-        { title: "Make Clips Go Viral", desc: "High view counts signal to Twitch's algorithm that your clip is worth sharing. This increases the chance of your clip appearing in recommended sections, top clips, and discovery feeds—exposing your content to thousands of potential new followers." },
-        { title: "Extend Your Reach Beyond Streams", desc: "Clips live on after your stream ends. A viral clip continues attracting viewers to your channel 24/7, even when you're offline. Boosted clips work as permanent marketing assets that keep driving traffic to your profile." },
-        { title: "Enhance Social Media Sharing", desc: "When you share clips on Twitter, Reddit, or Discord, the view count adds credibility. A clip with thousands of views gets more clicks and shares than one with a handful, creating a multiplier effect across every platform you post on." },
-        { title: "Stand Out in Your Community", desc: "Top clips in any game category get featured prominently on Twitch. Higher view counts push your clips into these featured spots, putting your brand in front of the entire community for your game or niche." },
+        { title: `Make ${itemTypeCapitalized}s Go Viral`, desc: `High view counts signal to Twitch's algorithm that your ${itemType} is worth sharing. This increases the chance of your ${itemType} appearing in recommended sections, exposing your content to thousands of potential new followers.` },
+        { title: "Extend Your Reach Beyond Streams", desc: `${itemTypeCapitalized}s live on after your stream ends. A viral ${itemType} continues attracting viewers to your channel 24/7, even when you're offline. Boosted ${itemType}s work as permanent marketing assets.` },
+        { title: "Enhance Social Media Sharing", desc: `When you share ${itemType}s on Twitter, Reddit, or Discord, the view count adds credibility. A ${itemType} with thousands of views gets more clicks and shares than one with a handful.` },
+        { title: "Stand Out in Your Community", desc: `Top ${itemType}s in any game category get featured prominently on Twitch. Higher view counts push your ${itemType}s into these featured spots, putting your brand in front of the entire community.` },
       ],
       howItWorks: [
-        "Pick the clip views package that matches your goals.",
-        "Paste the link to your Twitch clip—no account access needed.",
+        `Pick the ${itemType} views package that matches your goals.`,
+        `Paste the link to your Twitch ${itemType}—no account access needed.`,
         "Complete your secure payment via Stripe or cryptocurrency.",
-        "Views start rolling in within minutes, boosting your clip's visibility.",
+        `Views start rolling in within minutes, boosting your ${itemType}'s visibility.`,
       ],
       seoBlocks: [
         {
-          heading: "Why Buy Twitch Clip Views?",
-          text: "Twitch clips are one of the most powerful growth tools available to streamers, but only if people actually see them. A brilliant clip with 50 views gets buried and forgotten. That same clip with 10,000 views gets recommended by Twitch, shared on social media, and can single-handedly bring hundreds of new followers to your channel.\n\nBuying clip views gives your best moments the initial traction they need to reach a wider audience. Twitch's recommendation engine prioritizes clips with higher engagement, meaning more views lead to more organic views in a compounding effect. It's the most cost-effective way to turn your stream highlights into genuine growth engines for your channel."
+          heading: `Why Buy Twitch ${itemTypeCapitalized} Views?`,
+          text: `Twitch ${itemType}s are one of the most powerful growth tools available to streamers, but only if people actually see them. A brilliant ${itemType} with 50 views gets buried and forgotten. That same ${itemType} with 10,000 views gets recommended by Twitch, shared on social media, and can single-handedly bring hundreds of new followers to your channel.\n\nBuying ${itemType} views gives your best moments the initial traction they need to reach a wider audience. Twitch's recommendation engine prioritizes ${itemType}s with higher engagement, meaning more views lead to more organic views in a compounding effect.`
         },
         {
-          heading: "How Clip Views Drive Channel Growth",
-          text: "Unlike followers or viewers that benefit you during live streams, clip views work around the clock. A popular clip continues to attract attention days, weeks, and even months after it was created. When someone discovers an entertaining clip, their natural next action is to visit your channel profile, check out your stream schedule, and follow for future content.\n\nThis makes clip views one of the highest-ROI investments you can make in your channel. Each boosted clip becomes a permanent marketing asset in your content library. Streamers who consistently boost their best clips see a steady stream of new followers arriving from clip discovery, even during periods when they're not actively streaming."
+          heading: `How ${itemTypeCapitalized} Views Drive Channel Growth`,
+          text: `Unlike followers or viewers that benefit you during live streams, ${itemType} views work around the clock. A popular ${itemType} continues to attract attention days, weeks, and even months after it was created. When someone discovers an entertaining ${itemType}, their natural next action is to visit your channel profile, check out your stream schedule, and follow for future content.\n\nThis makes ${itemType} views one of the highest-ROI investments you can make in your channel. Each boosted ${itemType} becomes a permanent marketing asset in your content library.`
         },
         {
-          heading: "Getting the Most from Clip Views",
-          text: "Focus on boosting your best, most shareable clips. Funny moments, incredible plays, unexpected reactions, and emotional highlights tend to perform best. Don't waste views on average content—save your investment for the clips that truly represent your best moments and personality as a streamer.\n\nCombine clip view purchases with social media promotion for maximum impact. Boost a clip's views, then share it on Twitter, Reddit, TikTok, and Discord. The high view count adds social proof when people encounter your clip on these platforms, dramatically increasing click-through rates and follow conversions."
+          heading: `Getting the Most from ${itemTypeCapitalized} Views`,
+          text: `Focus on boosting your best, most shareable ${itemType}s. Funny moments, incredible plays, unexpected reactions, and emotional highlights tend to perform best. Don't waste views on average content—save your investment for the ${itemType}s that truly represent your best moments and personality as a streamer.\n\nCombine ${itemType} view purchases with social media promotion for maximum impact. Boost a ${itemType}'s views, then share it on Twitter, Reddit, TikTok, and Discord.`
         },
       ],
       faqs: [
-        { q: "How do I provide my clip?", a: "Simply paste the URL of your Twitch clip during checkout. You can find the clip URL by right-clicking on any clip on Twitch and selecting 'Copy Link'. No account access or password is needed." },
-        { q: "How fast are clip views delivered?", a: "Views typically begin delivering within 5-10 minutes of order confirmation. Most packages complete within 1-24 hours depending on the size, with gradual delivery for natural-looking growth." },
-        { q: "Can I boost multiple clips?", a: "Yes! You can place separate orders for different clips. Many streamers boost their top 3-5 clips per week to maintain a strong clip portfolio that consistently drives new followers." },
-        { q: "Will the views drop over time?", a: "Our clip views have excellent retention rates. In the rare case that any views drop within 30 days of purchase, our refill guarantee ensures they're replaced at no extra cost." },
-        { q: "Can people see who viewed my clip?", a: "No. Twitch does not display individual viewer identities on clips. Only the total view count is visible, so there's no way to distinguish purchased views from organic ones." },
-        { q: "Does this work for old clips too?", a: "Absolutely! You can boost any existing clip regardless of when it was created. Reviving an older clip with fresh views can bring it back into Twitch's recommendation engine." },
-        { q: "Will more views help my clip get featured?", a: "Yes. Twitch's algorithm considers view count and engagement velocity when deciding which clips to feature in category top clips, discovery feeds, and recommendations. Higher views significantly increase your chances of being featured." },
-        { q: "Is buying clip views safe for my account?", a: "Completely safe. We only need the clip URL—no account credentials, no login access. The views are delivered through safe methods that look identical to organic viewing patterns." },
+        { q: `How do I provide my ${itemType}?`, a: `Simply paste the URL of your Twitch ${itemType} during checkout. You can find the URL by right-clicking on any ${itemType} on Twitch and selecting 'Copy Link'. No account access or password is needed.` },
+        { q: `How fast are ${itemType} views delivered?`, a: "Views typically begin delivering within 5-10 minutes of order confirmation. Most packages complete within 1-24 hours depending on the size, with gradual delivery for natural-looking growth." },
+        { q: `Can I boost multiple ${itemType}s?`, a: `Yes! You can place separate orders for different ${itemType}s. Many streamers boost their top 3-5 ${itemType}s per week to maintain a strong portfolio that consistently drives new followers.` },
+        { q: "Will the views drop over time?", a: "Our views have excellent retention rates. In the rare case that any views drop within 30 days of purchase, our refill guarantee ensures they're replaced at no extra cost." },
+        { q: `Can people see who viewed my ${itemType}?`, a: "No. Twitch does not display individual viewer identities on clips or videos. Only the total view count is visible, so there's no way to distinguish purchased views from organic ones." },
+        { q: `Does this work for old ${itemType}s too?`, a: `Absolutely! You can boost any existing ${itemType} regardless of when it was created. Reviving an older ${itemType} with fresh views can bring it back into Twitch's recommendation engine.` },
+        { q: `Will more views help my ${itemType} get featured?`, a: `Yes. Twitch's algorithm considers view count and engagement velocity when deciding which ${itemType}s to feature in category top lists, discovery feeds, and recommendations.` },
+        { q: `Is buying ${itemType} views safe for my account?`, a: `Completely safe. We only need the ${itemType} URL—no account credentials, no login access. The views are delivered through safe methods that look identical to organic viewing patterns.` },
       ],
     };
   }
@@ -278,9 +360,19 @@ function getServiceContent(slug: string, name: string): ServiceContent {
   };
 }
 
+export async function generateStaticParams() {
+  const services = await prisma.service.findMany({
+    where: { status: true },
+    select: { slug: true },
+  });
+  return services.map((s) => ({ slug: s.slug }));
+}
+
+export const revalidate = 43200;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await prisma.service.findUnique({ where: { slug } });
+  const service = await getService(slug);
   if (!service) return { title: "Service Not Found" };
   const content = getServiceContent(slug, service.name);
   return {
@@ -297,16 +389,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const service = await prisma.service.findUnique({
-    where: { slug, status: true },
-    include: { category: true },
-  });
+  const service = await getService(slug);
 
   if (!service || !service.plans) {
     notFound();
   }
 
-  const plans = service.plans as unknown as Plan[];
+  const allPlans = service.plans as unknown as Plan[];
+  const plans = allPlans.filter((p) => !p.frequency);
+  const hasSubscriptions = allPlans.some((p) => p.frequency);
   const content = getServiceContent(slug, service.name);
 
   return (
@@ -346,41 +437,58 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                   Select a Package
                 </h2>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {plans.map((plan) => (
-                    <div
+                    <Link
                       key={plan.id}
-                      className={`relative p-5 rounded-xl border-2 transition-all group ${
-                        plan.popular
-                          ? "border-[#9146FF] bg-[#9146FF]/5"
-                          : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:border-[#9146FF]/50"
-                      }`}
+                      href={`/checkout?service=${service.slug}&plan=${plan.id}`}
+                      className="block group/plan"
                     >
-                      {plan.popular && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#9146FF] to-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          Most Popular
+                      <div
+                        className={`relative p-4 rounded-xl border-2 transition-all h-full flex flex-col ${
+                          plan.popular
+                            ? ""
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+                        }`}
+                        style={plan.popular ? { borderColor: content.color, backgroundColor: `${content.color}0d` } : {}}
+                      >
+                        {plan.popular && (
+                          <div
+                            className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap"
+                            style={{ backgroundColor: content.color }}
+                          >
+                            Popular
+                          </div>
+                        )}
+                        <div className={`text-center ${plan.popular ? "pt-1" : ""}`}>
+                          <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white leading-tight">{plan.name}</h3>
+                          <span className="text-base sm:text-lg font-black block mt-1" style={{ color: content.color }}>${plan.price.toFixed(2)}</span>
                         </div>
-                      )}
-                      <div className="pt-2">
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">{plan.name}</h3>
-                        <div className="flex items-baseline gap-1 mb-4">
-                          <span className="text-2xl font-black" style={{ color: content.color }}>${plan.price.toFixed(2)}</span>
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">one-time</span>
+                        <div className="mt-3">
+                          <div
+                            className={`w-full text-center py-2 rounded-lg text-xs font-bold transition-all ${
+                              plan.popular
+                                ? "text-white shadow-md"
+                                : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                            }`}
+                            style={plan.popular ? { backgroundColor: content.color, boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
+                          >
+                            Buy Now
+                          </div>
                         </div>
                       </div>
-                      <Link href={`/checkout?service=${service.slug}&plan=${plan.id}`} className="w-full block">
-                        <Button
-                          className={`w-full font-bold h-11 ${plan.popular ? "shadow-lg" : ""}`}
-                          style={plan.popular ? { backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` } : {}}
-                          variant={plan.popular ? "primary" : "secondary"}
-                        >
-                          Buy Now
-                        </Button>
-                      </Link>
-                    </div>
+                    </Link>
                   ))}
                 </div>
+                {hasSubscriptions && (
+                  <div className="mt-4 p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/15">
+                    <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9m-9 9a9 9 0 0 1 9-9" /></svg>
+                      Weekly &amp; Monthly plans available at checkout — viewers auto-activate every stream
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -416,6 +524,18 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                   </div>
                 ))}
               </div>
+              {slug.includes("follower") && (
+                <div className="px-6 pb-4">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400/80 leading-relaxed">
+                      Your Twitch account must have a <strong>verified email</strong> and <strong>phone number</strong> to receive followers.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="px-6 pb-6 pt-2">
                 <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center justify-center gap-2">
@@ -536,9 +656,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <Link href={`/${service.slug}#`}>
               <Button
                 size="lg"
-                variant="primary"
-                className="font-bold px-10 h-14 text-lg"
-                style={{ backgroundColor: content.color, color: "white", boxShadow: `0 4px 14px -3px ${content.color}50` }}
+                className="btn-primary font-bold px-10 h-14 text-lg"
               >
                 Choose Your Package
               </Button>
